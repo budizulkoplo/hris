@@ -21,15 +21,32 @@ Sistem HRIS ini dikembangkan untuk mengelola data pegawai, absensi, cuti, jadwal
 - **JavaScript + jQuery + DataTables**
 - **Bootstrap** (untuk tampilan antarmuka)
 
-## 🗂️ Struktur Direktori (Contoh)
-
+## 🗂️ Struktur Direktori
+/app
+/Controllers
+/Models
+/Views
+/public
+/writable
+.env
 
 ## ⚙️ Instalasi
 
 1. Clone repo ini:
+**git clone https://github.com/username/hris.git**
 
-   ```bash
-   git clone https://github.com/username/hris.git
+masuk ke folder --> cd hris
+copy file konfigurasi --> **cp .env.example .env**
+sesuikan konfigurasi koneksi db yang ada di .env
+   database.default.hostname = localhost
+   database.default.database = hris
+   database.default.username = root
+   database.default.password = 
+   
+jalankan aplikasi
+   **php spark serve**
+
+Akses aplikasi di: **http://localhost:8080**
 
 📌 Catatan
 Data absensi ditarik dari mesin fingerprint dan diolah berdasarkan jadwal shift.

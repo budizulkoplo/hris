@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Absensi Ahad Pagi</title>
+    <meta name="description" content="Mobilekit HTML Mobile UI Kit">
+    <meta name="keywords" content="bootstrap 4, mobile template, cordova, phonegap, mobile, html" />
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://dr.rspkuboja.com/assets/img/icon/192x192.png">
+    <link rel="stylesheet" href="https://dr.rspkuboja.com/assets/css/style.css">
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body style="background-color:0A97B0;">
+
+    <!-- loader -->
+    <div id="loader">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+    <!-- * loader -->
+
+    
+    <!-- App Capsule -->
+    <div id="appCapsule">
+        <style>
+    .logout {
+        position: absolute;
+        color white;
+        font-size: 30px;
+        text-decoration: none;
+        right: 8px;
+    }
+
+    .logout:hover {
+        color: white;
+    }
+    
+     #user-name-container {
+    position: relative;
+    font-size: 1rem;
+    height: 2rem; 
+    width: 100%; 
+    }
+    
+    #user-name, #user-department {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        opacity: 0;
+        white-space: nowrap; 
+    }
+    #nama {
+        color: #ffffff; 
+    }
+    
+    .typing {
+        opacity: 1;
+    }
+    </style>
+        <div class="section" id="user-section">
+    <a href="/proseslogout" class="logout">
+        <ion-icon name="exit-outline"></ion-icon>
+    </a>
+    <div id="user-detail">
+        <div class="avatar">
+                        <img src="assets/img/sample/avatar/avatar1.jpg" alt="avatar" class="imaged w10 rounded" style="width: 60px; height: 60px;">
+                    </div>
+        <div id="user-info">
+        <div id="user-name-container">
+            <h3 id="nama">Dzulfikar Budi Andreanto</h3>
+            <h2></h2>
+        </div>
+        <br>
+        <br>
+            <span id="user-role">Dokter IT</span>
+        </div>
+    </div>
+</div>
+
+        <div class="section" id="menu-section">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="list-menu">
+                        <div class="item-menu text-center">
+                            <div class="menu-icon">
+                                <a href="/editprofile" class="green" style="font-size: 40px;">
+                                    <ion-icon name="person-sharp"></ion-icon>
+                                </a>
+                            </div>
+                            <div class="menu-name">
+                                <span class="text-center">Profil</span>
+                            </div>
+                        </div>
+                        <!-- <div class="item-menu text-center">
+                            <div class="menu-icon">
+                                <a href="/presensi/izin" class="danger" style="font-size: 40px;">
+                                    <ion-icon name="calendar-number"></ion-icon>
+                                </a>
+                            </div>
+                            <div class="menu-name">
+                                <span class="text-center">Izin</span>
+                            </div>
+                        </div> -->
+                        <div class="item-menu text-center">
+                            <div class="menu-icon">
+                                <a href="/presensi/histori" class="warning" style="font-size: 40px;">
+                                    <ion-icon name="document-text"></ion-icon>
+                                </a>
+                            </div>
+                            <div class="menu-name">
+                                <span class="text-center">Histori</span>
+                            </div>
+                        </div>
+                        <div class="item-menu text-center">
+                            <div class="menu-icon">
+                                <a href="" class="orange" style="font-size: 40px;">
+                                    <ion-icon name="location"></ion-icon>
+                                </a>
+                            </div>
+                            <div class="menu-name">
+                                Lokasi
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section mt-2" id="presence-section">
+            <div class="todaypresence">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card gradasigreen">
+                            <div class="card-body">
+                                <div class="presencecontent">
+                                    <div class="iconpresence">
+                                                                                                                     <img src="https://dr.rspkuboja.com/storage/uploads/absensi/3324081203900002-2025-06-05.png" alt="" class="imaged w48" style="height: 45px">
+                                                                           </div>
+                                    <div class="presencedetail">
+                                        <h4 class="presencetitle">Absen</h4>
+                                        <span>09:10:20</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="rekappresensi">
+                <h3>Rekap Presensi Bulan Juni Tahun 2025</h3>
+                <div class="row">
+                    <div class="col-3">
+                        <div class="card">
+                            <div class="card-body text center" style=" 16px 12px !important; line-height:0.8rem">
+                                <span class ="badge bg-danger" style="position: absolute; top:3px; right:10p; font-size:0.6rem;
+                                z-index:999">1</span>
+                                <ion-icon name="accessibility-outline" style="font-size:  1.6rem;"  class="text-primary mb-1"></ion-icon>
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500">Hadir</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- <div class="col-3">
+                        <div class="card">
+                            <div class="card-body text center" style=" 16px 12px !important; line-height:0.8rem">
+                                <span class ="badge bg-danger" style="position: absolute; top:3px; right:10p; font-size:0.6rem;
+                                z-index:999"></span>
+                                <ion-icon name="newspaper-outline" style="font-size:  1.6rem;"  class="text-success mb-1"></ion-icon>
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500">Izin</span>
+                            </div>
+                        </div>
+                    </div> -->
+                    <!-- <div class="col-3">
+                        <div class="card">
+                            <div class="card-body text center" style=" 16px 12px !important; line-height:0.8rem">
+                                <span class ="badge bg-danger" style="position: absolute; top:3px; right:10p; font-size:0.6rem;
+                                z-index:999"></span>
+                                <ion-icon name="medkit-outline" style="font-size:  1.6rem;"  class="text-warning mb-1"></ion-icon>
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500">Sakit</span>
+                            </div>
+                        </div>
+                    </div> -->
+                    <div class="col-3">
+                        <div class="card">
+                            <div class="card-body text center" style=" 16px 12px !important; line-height:0.8rem">
+                                <span class ="badge bg-danger" style="position: absolute; top:3px; right:10p; font-size:0.6rem;
+                                z-index:999">0</span>
+                                <ion-icon name="alarm-outline" style="font-size:  1.6rem;"  class="text-danger mb-1"></ion-icon>
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500">Telat</span>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+            <div class="presencetab mt-2">
+                <div class="tab-pane fade show active" id="pilled" role="tabpanel">
+                    <ul class="nav nav-tabs style1" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#home" role="tab">
+                                Bulan Ini
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#profile" role="tab">
+                                Leaderboard
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content mt-2" style="margin-bottom:100px;">
+                    <div class="tab-pane fade show active" id="home" role="tabpanel">
+                        <ul class="listview image-listview">
+                                                                                    <li>
+                                <div class="item">
+                                    <div class="icon-box bg-primary">
+                                    <ion-icon name="finger-print-outline"></ion-icon>
+                                    </div>
+                                    <div class="in">
+                                        <div>05-06-2025</div>
+                                        <span class="badge  bg-success">
+                                                    09:10:20
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                                                    </ul>
+                    </div>
+                    <div class="tab-pane fade" id="profile" role="tabpanel">
+                        <ul class="listview image-listview">
+                                                        <li>
+                                <div class="item">
+                                    <img src="assets/img/sample/avatar/avatar1.jpg" alt="image" class="image">
+                                    <div class="in">
+                                        <div>
+                                            <b>dr. Ditha Paramasitha, Sp. M.</b><br>
+                                            <small class="text-muted">dokter mata</small>
+                                        </div>
+                                        <span class="badge  bg-success">
+                                                    08:43:50
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                                                        <li>
+                                <div class="item">
+                                    <img src="assets/img/sample/avatar/avatar1.jpg" alt="image" class="image">
+                                    <div class="in">
+                                        <div>
+                                            <b>Dzulfikar Budi Andreanto</b><br>
+                                            <small class="text-muted">Dokter IT</small>
+                                        </div>
+                                        <span class="badge  bg-success">
+                                                    09:10:20
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                                                        
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        const userNameElement = document.getElementById('user-name');
+        const userDepartmentElement = document.getElementById('user-department');
+        
+        const nameText = 'Dzulfikar Budi Andreanto';
+        const departmentText = '';
+        
+        let typingInterval;
+        let deleteInterval;
+        
+        function typeText(element, text, speed, callback) {
+            let index = 0;
+            element.textContent = '';
+            element.style.opacity = 1;  
+            typingInterval = setInterval(function() {
+                if (index < text.length) {
+                    element.textContent += text.charAt(index);
+                    index++;
+                } else {
+                    clearInterval(typingInterval);
+                    if (callback) callback();
+                }
+            }, speed);
+        }
+        
+        function deleteText(element, speed, callback) {
+            let currentText = element.textContent;
+            let index = currentText.length;
+            deleteInterval = setInterval(function() {
+                if (index > 0) {
+                    element.textContent = currentText.substring(0, index - 1);
+                    index--;
+                } else {
+                    clearInterval(deleteInterval);
+                    if (callback) callback();
+                }
+            }, speed);
+        }
+        
+        function startTyping() {
+            typeText(userNameElement, nameText, 100, function() {
+                setTimeout(function() {
+                    deleteText(userNameElement, 50, function() {
+                        typeText(userDepartmentElement, departmentText, 100, function() {
+                            setTimeout(function() {
+                                deleteText(userDepartmentElement, 50, function() {
+                                    setTimeout(startTyping, 1000);
+                                });
+                            }, 2000); 
+                        });
+                    });
+                }, 2000); 
+            });
+        }
+        
+        window.onload = function() {
+            setTimeout(startTyping, 500);
+        };
+</script>
+    </div>
+    <!-- * App Capsule -->
+
+    <div class="appBottomMenu">
+
+        <a href="/dashboard" class="item active">
+
+            <div class="col">
+
+            <ion-icon name="home-outline"></ion-icon>
+
+                <strong>Home</strong>
+
+            </div>
+
+        </a>
+
+        <a href="/presensi/histori" class="item  ">
+
+            <div class="col">
+
+                <ion-icon name="document-text-outline" role="img" class="md hydrated"
+
+                    aria-label="document text outline"></ion-icon>
+
+                <strong>Histori</strong>
+
+            </div>
+
+        </a>
+
+        <a href="/presensi/create" class="item">
+
+            <div class="col">
+
+                <div class="action-button large">
+
+                    <ion-icon name="camera" role="img" class="md hydrated" aria-label="add outline"></ion-icon>
+
+                </div>
+
+            </div>
+
+        </a>
+
+        <a href="" class="item  ">
+
+            <div class="col">
+
+            <ion-icon name="location"></ion-icon>
+
+                <strong>Refresh Lokasi</strong>
+
+            </div>
+
+        </a>
+
+        <a href="/editprofile" class="item  ">
+
+            <div class="col">
+
+                <ion-icon name="people-outline" role="img" class="md hydrated" aria-label="people outline"></ion-icon>
+
+                <strong>Profile</strong>
+
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- * App Bottom Menu -->
+    <!-- ///////////// Js Files ////////////////////  -->
+    <!-- Jquery -->
+    <script src="https://dr.rspkuboja.com/assets/js/lib/jquery-3.4.1.min.js"></script>
+    <!-- Bootstrap-->
+    <script src="https://dr.rspkuboja.com/assets/js/lib/popper.min.js"></script>
+    <script src="https://dr.rspkuboja.com/assets/js/lib/bootstrap.min.js"></script>
+    <!-- Ionicons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <!-- Owl Carousel -->
+    <script src="https://dr.rspkuboja.com/assets/js/plugins/owl-carousel/owl.carousel.min.js"></script>
+    <!-- jQuery Circle Progress -->
+    <script src="https://dr.rspkuboja.com/assets/js/plugins/jquery-circle-progress/circle-progress.min.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js" ></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+
+    <!-- Base Js File -->
+    <script src="https://dr.rspkuboja.com/assets/js/base.js"></script>
+
+    <script>
+        am4core.ready(function () {
+
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            var chart = am4core.create("chartdiv", am4charts.PieChart3D);
+            chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+
+            chart.legend = new am4charts.Legend();
+
+            chart.data = [
+                {
+                    country: "Hadir",
+                    litres: 501.9
+                },
+                {
+                    country: "Sakit",
+                    litres: 301.9
+                },
+                {
+                    country: "Izin",
+                    litres: 201.1
+                },
+                {
+                    country: "Terlambat",
+                    litres: 165.8
+                },
+            ];
+
+
+
+            var series = chart.series.push(new am4charts.PieSeries3D());
+            series.dataFields.value = "litres";
+            series.dataFields.category = "country";
+            series.alignLabels = false;
+            series.labels.template.text = "{value.percent.formatNumber('#.0')}%";
+            series.labels.template.radius = am4core.percent(-40);
+            series.labels.template.fill = am4core.color("white");
+            series.colors.list = [
+                am4core.color("#1171ba"),
+                am4core.color("#fca903"),
+                am4core.color("#37db63"),
+                am4core.color("#ba113b"),
+            ];
+        }); // end am4core.ready()
+    
+    </script>
+
+    
+</body>
+
+</html>

@@ -415,47 +415,113 @@ private function timeToSeconds($time)
 }
 
 public function kajian()
+    {
+        $m_kehadiran = new \App\Models\KehadiranKajianModel();
+        $m_kajian = new \App\Models\Kajian_model();
+
+        // Ambil input filter
+        $idkajian = $this->request->getGet('idkajian');
+        $tanggal = $this->request->getGet('tanggal'); // format: Y-m-d
+
+        // Query dasar join dengan tabel kajian untuk menampilkan nama kajian
+        $query = $m_kehadiran->select('kehadiran_kajian.*, kajian.namakajian, kajian.tanggal as tanggal_kajian')
+            ->join('kajian', 'kajian.idkajian = kehadiran_kajian.idkajian', 'left');
+
+        // Filter berdasarkan idkajian jika dipilih
+        if (!empty($idkajian)) {
+            $query->where('kehadiran_kajian.idkajian', $idkajian);
+        }
+
+        // Filter berdasarkan tanggal scan jika dipilih
+        if (!empty($tanggal)) {
+            $query->where('DATE(kehadiran_kajian.waktu_scan)', $tanggal);
+        }
+
+        // Eksekusi query
+        $dataKehadiran = $query->orderBy('kehadiran_kajian.waktu_scan', 'ASC')->findAll();
+
+        // Ambil daftar kajian untuk dropdown filter
+        $dataKajian = $m_kajian->findAll();
+
+        // Kirim data ke view
+        $data = [
+            'title'         => 'Laporan Kehadiran Kajian',
+            'printstatus'   => 'print',
+            'dataKehadiran' => $dataKehadiran,
+            'dataKajian'    => $dataKajian,
+            'idkajian'      => $idkajian,
+            'tanggal'       => $tanggal,
+            'content'       => 'admin/laporan/kajian',
+        ];
+
+        return view('admin/layout/wrapper', $data);
+    }
+
+public function absensidokter()
 {
-    $m_kehadiran = new \App\Models\KehadiranKajianModel();
-    $m_kajian = new \App\Models\Kajian_model();
+    $periode = $this->request->getGet('periode') ?? date('Y-m');
+    $urlApi = "https://dr.rspkuboja.com/api/absendokter?periode={$periode}";
 
-    // Ambil input filter
-    $idkajian = $this->request->getGet('idkajian');
-    $tanggal = $this->request->getGet('tanggal'); // format: Y-m-d
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $urlApi,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_HTTPHEADER => [
+            'X-API-KEY: pkuboja2025',
+        ],
+    ]);
+    $response = curl_exec($ch);
 
-    // Query dasar join dengan tabel kajian untuk menampilkan nama kajian
-    $query = $m_kehadiran->select('kehadiran_kajian.*, kajian.namakajian, kajian.tanggal as tanggal_kajian')
-        ->join('kajian', 'kajian.idkajian = kehadiran_kajian.idkajian', 'left');
-
-    // Filter berdasarkan idkajian jika dipilih
-    if (!empty($idkajian)) {
-        $query->where('kehadiran_kajian.idkajian', $idkajian);
+    if (!$response) {
+        throw new \Exception('Tidak dapat mengambil data absensi dari API.');
     }
 
-    // Filter berdasarkan tanggal scan jika dipilih
-    if (!empty($tanggal)) {
-        $query->where('DATE(kehadiran_kajian.waktu_scan)', $tanggal);
+    file_put_contents(WRITEPATH . 'debug_api_response.txt', $response);
+
+    $result = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new \Exception('JSON decode error: ' . json_last_error_msg());
     }
 
-    // Eksekusi query
-    $dataKehadiran = $query->orderBy('kehadiran_kajian.waktu_scan', 'ASC')->findAll();
+    if (!isset($result['status']) || $result['status'] !== 'success') {
+        throw new \Exception('Data absensi tidak valid.');
+    }
 
-    // Ambil daftar kajian untuk dropdown filter
-    $dataKajian = $m_kajian->findAll();
+    $dataAbsensi = $result['data'];
+    $periodeDisplay = date('F Y', strtotime($result['periode'] . '-01'));
 
-    // Kirim data ke view
+    $rekapDokter = [];
+    foreach ($dataAbsensi as $absensi) {
+        $nik = $absensi['nik'];
+        if (!isset($rekapDokter[$nik])) {
+            $rekapDokter[$nik] = [
+                'nik' => $nik,
+                'nama_lengkap' => $absensi['nama_lengkap'],
+                'jabatan' => $absensi['jabatan'],
+                'jumlah_kehadiran' => 0,
+            ];
+        }
+        $rekapDokter[$nik]['jumlah_kehadiran']++;
+    }
+
+    usort($rekapDokter, fn($a, $b) => strcmp($a['nama_lengkap'], $b['nama_lengkap']));
+
     $data = [
-        'title'         => 'Laporan Kehadiran Kajian',
-        'printstatus'   => 'print',
-        'dataKehadiran' => $dataKehadiran,
-        'dataKajian'    => $dataKajian,
-        'idkajian'      => $idkajian,
-        'tanggal'       => $tanggal,
-        'content'       => 'admin/laporan/kajian',
+        'title' => 'Rekap Presensi Dokter',
+        'printstatus' => 'print',
+        'rekapDokter' => $rekapDokter,
+        'periode' => $periode,
+        'periodeDisplay' => $periodeDisplay,
+        'tanggalCetak' => date('d-m-Y'),
+        'totalDokter' => count($rekapDokter),
+        'totalKehadiran' => array_sum(array_column($rekapDokter, 'jumlah_kehadiran')),
+        'content' => 'admin/laporan/absensidokter',
     ];
 
     return view('admin/layout/wrapper', $data);
 }
-
 
 }

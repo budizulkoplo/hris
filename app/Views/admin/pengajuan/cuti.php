@@ -30,14 +30,33 @@
 </div>
 
 <div class="form-group row">
-    <label class="col-3 col-form-label">Tanggal Cuti</label>
+    <label class="col-3 col-form-label">Tanggal Mulai Cuti</label>
     <div class="col-9">
         <div class="input-group date">
-            <input type="text" name="tanggal_cuti" id="tanggal_cuti" class="form-control" required autocomplete="off">
+            <input type="text" name="tgl_mulai" id="tgl_mulai" class="form-control" required autocomplete="off">
             <div class="input-group-append">
                 <span class="input-group-text"><i class="fa fa-calendar"></i></span>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <label class="col-3 col-form-label">Tanggal Selesai Cuti</label>
+    <div class="col-9">
+        <div class="input-group date">
+            <input type="text" name="tgl_selesai" id="tgl_selesai" class="form-control" required autocomplete="off">
+            <div class="input-group-append">
+                <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <label class="col-3 col-form-label">Jumlah Hari</label>
+    <div class="col-9">
+        <input type="text" name="jml_hari" id="jml_hari" class="form-control" readonly>
     </div>
 </div>
 
@@ -57,6 +76,34 @@
     </div>
 </div>
 
+<!-- Jenis Cuti -->
+<div class="form-group row">
+    <label class="col-3 col-form-label">Jenis Cuti</label>
+    <div class="col-9">
+        <select name="jeniscuti" class="form-control" required>
+            <option value="">Pilih Jenis Cuti</option>
+            <option value="Cuti Tahunan">Cuti Tahunan</option>
+            <option value="Cuti Sakit">Cuti Sakit</option>
+            <option value="Cuti Tidak Dibayar">Cuti Tidak Dibayar</option>
+        </select>
+    </div>
+</div>
+
+<!-- Pegawai Pengganti -->
+<div class="form-group row">
+    <label class="col-3 col-form-label">Pegawai Pengganti</label>
+    <div class="col-9">
+        <select name="idpengganti" class="form-control-sm select2" required>
+            <option value="">Pilih Pegawai</option>
+            <?php foreach ($pegawai as $p) : ?>
+                <option value="<?= esc($p['pegawai_pin']); ?>">
+                    <?= esc($p['pegawai_pin']) ?> - <?= esc($p['pegawai_nama']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+</div>
+
 <div class="mt-3">
     <button type="submit" class="btn btn-primary">
         <i class="fa fa-save"></i> Ajukan Cuti
@@ -72,7 +119,9 @@
     <thead>
         <tr>
             <th>No</th>
-            <th>Tanggal Cuti</th>
+            <th>Tanggal Mulai</th>
+            <th>Tanggal Selesai</th>
+            <th>Jumlah Hari</th>
             <th>Alasan</th>
             <th>Aksi</th>
         </tr>
@@ -83,7 +132,9 @@
             <?php foreach ($daftar_cuti as $cuti) : ?>
                 <tr>
                     <td><?= $no++; ?></td>
-                    <td><?= date('d-m-Y', strtotime($cuti['tglcuti'])); ?></td>
+                    <td><?= date('d-m-Y', strtotime($cuti['tgl_mulai'])); ?></td>
+                    <td><?= date('d-m-Y', strtotime($cuti['tgl_selesai'])); ?></td>
+                    <td><?= $cuti['jml_hari']; ?></td>
                     <td><?= esc($cuti['alasancuti']); ?></td>
                     <td>
                         <a href="<?= base_url('admin/pengajuan/batalcuti/' . $cuti['idcuti']); ?>" 
@@ -100,34 +151,33 @@
             <?php endforeach; ?>
         <?php else : ?>
             <tr>
-                <td colspan="4" class="text-center">Belum ada riwayat cuti</td>
+                <td colspan="6" class="text-center">Belum ada riwayat cuti</td>
             </tr>
         <?php endif; ?>
     </tbody>
 </table>
 
 <script>
-    $(document).ready(function () {
-
-        $('#tanggal_cuti').datepicker({
-            format: 'yyyy-mm-dd', 
-            autoclose: true,
-            todayHighlight: true
-        });
+   $(document).ready(function() {
+    $('#tgl_mulai, #tgl_selesai').datepicker({
+        format: 'mm/dd/yyyy', // Format yang ditampilkan ke user
+        autoclose: true,
+        todayHighlight: true
     });
 
-    $(document).ready(function () {
-        var tanggal_terpakai = <?= json_encode(array_column($daftar_cuti, 'tglcuti')); ?>;
+    // Fungsi hitung jumlah hari
+    function calculateDays() {
+        var start = $('#tgl_mulai').datepicker('getDate');
+        var end = $('#tgl_selesai').datepicker('getDate');
+        
+        if (start && end) {
+            // Hitung selisih hari (termasuk hari terakhir)
+            var timeDiff = end.getTime() - start.getTime();
+            var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+            $('#jml_hari').val(diffDays);
+        }
+    }
 
-        $('#tanggal_cuti').datepicker({
-            format: 'yyyy-mm-dd',
-            autoclose: true,
-            todayHighlight: true,
-            beforeShowDay: function (date) {
-                var tanggal = date.toISOString().split('T')[0]; 
-                return tanggal_terpakai.includes(tanggal) ? false : true; 
-            }
-        });
-    });
+    $('#tgl_mulai, #tgl_selesai').change(calculateDays);
+});
 </script>
-

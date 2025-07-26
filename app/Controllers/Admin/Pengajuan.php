@@ -8,122 +8,228 @@ use App\Models\Lembur_model;
 use App\Models\Tugasluar_model;
 use App\Models\Pegawai_model;
 use DateTime;
+use DateInterval;
+use DatePeriod;
+use Mpdf\Mpdf;
 
 class Pengajuan extends BaseController
 {
+    public function formatNomorSurat($id, $tanggal)
+    {
+        $bulanRomawi = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+        ];
+        $bulan = date('n', strtotime($tanggal));
+        $tahun = date('Y', strtotime($tanggal));
+        return str_pad($id, 3, '0', STR_PAD_LEFT) . '/CUTI/' . $bulanRomawi[$bulan] . '/' . $tahun;
+    }
+
     public function cuti($pegawai_pin = null, $idkaru = null)
-    {
-        checklogin();
+{
+    checklogin();
 
-        $m_cuti = new Cuti_model();
-        $m_pegawai = new Pegawai_model();
+    $m_cuti = new Cuti_model();
+    $m_pegawai = new Pegawai_model();
 
-        // Ambil daftar cuti pegawai jika pegawai_pin tersedia
-        $daftar_cuti = [];
-        $sisa_cuti = 12; // Default sisa cuti per tahun
+    // Ambil daftar cuti pegawai jika pegawai_pin tersedia
+    $daftar_cuti = [];
+    $sisa_cuti = 12; // Default sisa cuti per tahun
 
-        if (!empty($pegawai_pin)) {
-            // Ambil daftar cuti dalam tahun berjalan
-            $tahun_sekarang = date('Y');
-            $daftar_cuti = $m_cuti->where('pegawai_pin', $pegawai_pin)
-                ->where('YEAR(tglcuti)', $tahun_sekarang)
-                ->orderBy('tglcuti', 'DESC')
-                ->findAll();
+    if (!empty($pegawai_pin)) {
+        // Ambil daftar cuti dalam tahun berjalan
+        $tahun_sekarang = date('Y');
+        $daftar_cuti = $m_cuti->where('pegawai_pin', $pegawai_pin)
+            ->where('YEAR(tgl_mulai)', $tahun_sekarang)
+            ->orderBy('tgl_mulai', 'DESC')
+            ->findAll();
 
-            // Hitung sisa cuti
-            $cuti_diambil = count($daftar_cuti);
-            $sisa_cuti = max(0, 12 - $cuti_diambil);
-        }
-
-        $data = [
-            'title'            => 'Ajukan Cuti Pegawai',
-            'pegawai'          => $m_pegawai->findAll(),
-            'selected_pegawai' => $pegawai_pin,
-            'idkaru'           => $idkaru,
-            'daftar_cuti'      => $daftar_cuti, 
-            'sisa_cuti'        => $sisa_cuti, 
-            'content'          => 'admin/pengajuan/cuti',
-        ];
-
-        echo view('admin/layout/wrapper', $data);
+        // Hitung sisa cuti
+        $cuti_diambil = array_sum(array_column($daftar_cuti, 'jml_hari'));
+        $sisa_cuti = max(0, 12 - $cuti_diambil);
     }
 
-    public function simpancuti()
-    {
-        checklogin();
+    $data = [
+        'title'            => 'Ajukan Cuti Pegawai',
+        'pegawai'          => $m_pegawai->findAll(),
+        'selected_pegawai' => $pegawai_pin,
+        'idkaru'           => $idkaru,
+        'daftar_cuti'      => $daftar_cuti, 
+        'sisa_cuti'        => $sisa_cuti, 
+        'content'          => 'admin/pengajuan/cuti',
+    ];
 
-        $m_cuti = new Cuti_model();
+    echo view('admin/layout/wrapper', $data);
+}
 
-        if ($this->request->getMethod() === 'post' && $this->validate([
-            'pegawai_pin'   => 'required',
-            'tanggal_cuti'  => 'required',
-            'alasan'        => 'required',
-        ])) {
+public function simpancuti()
+{
+    checklogin();
 
-            $pegawai_pin   = $this->request->getPost('pegawai_pin');
-            $tanggal_cuti  = $this->request->getPost('tanggal_cuti');
-            $alasan        = $this->request->getPost('alasan');
-            $idkaru        = $this->request->getPost('idkaru'); 
+    $m_cuti = new Cuti_model();
+    $m_pegawai = new Pegawai_model();
 
-            $tanggal_cuti_obj = DateTime::createFromFormat('m/d/Y', $tanggal_cuti);
-            if ($tanggal_cuti_obj) {
-                $tanggal_cuti = $tanggal_cuti_obj->format('Y-m-d');
-            } else {
-                session()->setFlashdata('error', 'Format tanggal tidak valid.');
-                return redirect()->to(base_url('admin/cuti'))->withInput();
-            }
+    if ($this->request->getMethod() === 'post' && $this->validate([
+        'pegawai_pin'   => 'required',
+        'tgl_mulai'     => 'required',
+        'tgl_selesai'   => 'required',
+        'alasan'        => 'required',
+        'idpengganti'   => 'required',
+        'jeniscuti'     => 'required'
+    ])) {
+        // Konversi format tanggal untuk tgl_mulai
+        $tgl_mulai_obj = DateTime::createFromFormat('m/d/Y', $this->request->getPost('tgl_mulai'));
+        if (!$tgl_mulai_obj) {
+            session()->setFlashdata('error', 'Format tanggal mulai tidak valid (MM/DD/YYYY)');
+            return redirect()->back()->withInput();
+        }
+        $tgl_mulai = $tgl_mulai_obj->format('Y-m-d');
 
-            $data = [
-                'pegawai_pin'   => $pegawai_pin,
-                'tglcuti'       => $tanggal_cuti,
-                'alasancuti'    => $alasan,
-                'created_at'    => date('Y-m-d H:i:s')
-            ];
+        // Konversi format tanggal untuk tgl_selesai
+        $tgl_selesai_obj = DateTime::createFromFormat('m/d/Y', $this->request->getPost('tgl_selesai'));
+        if (!$tgl_selesai_obj) {
+            session()->setFlashdata('error', 'Format tanggal selesai tidak valid (MM/DD/YYYY)');
+            return redirect()->back()->withInput();
+        }
+        $tgl_selesai = $tgl_selesai_obj->format('Y-m-d');
 
-            $m_cuti->insert($data);
+        // Validasi tanggal selesai harus setelah tanggal mulai
+        if ($tgl_selesai < $tgl_mulai) {
+            session()->setFlashdata('error', 'Tanggal selesai harus setelah tanggal mulai');
+            return redirect()->back()->withInput();
+        }
+
+        // Hitung jumlah hari cuti
+        $start = new DateTime($tgl_mulai);
+        $end = new DateTime($tgl_selesai);
+        $end->modify('+1 day'); // Include end date
+        $interval = $start->diff($end);
+        $jml_hari = $interval->days;
+
+        // Data untuk cutihdr
+        $dataHeader = [
+            'pegawai_pin'   => $this->request->getPost('pegawai_pin'),
+            'tgl_mulai'     => $tgl_mulai,
+            'tgl_selesai'   => $tgl_selesai,
+            'jml_hari'      => $jml_hari,
+            'alasancuti'    => $this->request->getPost('alasan'),
+            'jeniscuti'     => $this->request->getPost('jeniscuti'),
+            'idpengganti'   => $this->request->getPost('idpengganti'),
+            'created_at'    => date('Y-m-d H:i:s')
+        ];
+
+        // Generate array tanggal cuti untuk detail
+        $tanggalCuti = [];
+        $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+        foreach ($period as $date) {
+            $tanggalCuti[] = $date->format('Y-m-d');
+        }
+
+        // Simpan ke database menggunakan model
+        $idcuti = $m_cuti->simpanCuti($dataHeader, $tanggalCuti);
+
+        if ($idcuti) {
             session()->setFlashdata('sukses', 'Cuti berhasil diajukan.');
-
-            return redirect()->to(base_url("admin/pengajuan/cuti/{$pegawai_pin}"));
+            return redirect()->to(base_url("admin/pengajuan/cuti/" . $this->request->getPost('pegawai_pin')));
+        } else {
+            session()->setFlashdata('error', 'Gagal menyimpan cuti');
+            return redirect()->back()->withInput();
         }
-
-        session()->setFlashdata('error', 'Data tidak valid. Periksa kembali input Anda.');
-        return redirect()->to(base_url('admin/cuti'))->withInput();
     }
 
+    session()->setFlashdata('error', 'Data tidak valid. Periksa kembali input Anda.');
+    return redirect()->back()->withInput();
+}
+
+    // Cetak surat cuti
     public function cetak_cuti($idcuti)
-    {
-        checklogin();
+{
+    checklogin();
 
-        $m_cuti = new Cuti_model();
-        $cuti = $m_cuti->find($idcuti);
+    $m_cuti = new Cuti_model();
+    $m_pegawai = new Pegawai_model();
 
-        if (!$cuti) {
-            return redirect()->back()->with('error', 'Data cuti tidak ditemukan.');
-        }
-
-        $data = [
-            'title' => 'Surat Cuti Pegawai',
-            'cuti'  => $cuti,
-        ];
-
-        return view('admin/pengajuan/cetak_cuti', $data);
+    // Ambil data header cuti
+    $cuti = $m_cuti->find($idcuti);
+    if (!$cuti) {
+        return redirect()->back()->with('error', 'Data cuti tidak ditemukan.');
     }
+
+    // Ambil data pegawai pemohon
+    $pegawai = $m_pegawai
+        ->db
+        ->table('vwpegawai')
+        ->where('pegawai_pin', $cuti['pegawai_pin'])
+        ->get()
+        ->getRowArray();
+
+    if (!$pegawai) {
+        return redirect()->back()->with('error', 'Data pegawai tidak ditemukan.');
+    }
+
+
+    // Ambil data pegawai pengganti
+    $pengganti = $m_pegawai->where('pegawai_pin', $cuti['idpengganti'])->first();
+
+    // Ambil data SDI
+    $sdi = $m_pegawai->where('jabatan', 'SDI')->first();
+
+    // Format nomor surat
+    $bulanRomawi = [
+        1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+        7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+    ];
+    $bulan = date('n', strtotime($cuti['tgl_mulai']));
+    $tahun = date('Y', strtotime($cuti['tgl_mulai']));
+    $nosurat = str_pad($cuti['idcuti'], 3, '0', STR_PAD_LEFT) . '/CUTI/' . $bulanRomawi[$bulan] . '/' . $tahun;
+
+    $data = [
+        'title'       => 'Formulir Pengajuan Cuti',
+        'cuti'        => $cuti,
+        'pegawai'     => $pegawai,
+        'pengganti'   => $pengganti,
+        'sdi'         => $sdi,
+        'nosurat'     => $nosurat,
+        'tgl_cetak'   => date('d-m-Y'),
+        'tgl_mulai'   => date('d-m-Y', strtotime($cuti['tgl_mulai'])),
+        'tgl_selesai' => date('d-m-Y', strtotime($cuti['tgl_selesai'])),
+    ];
+
+    return view('admin/pengajuan/cetak_cuti', $data);
+}
+
+    // Batalkan cuti
     public function batalcuti($idcuti)
-    {
-        checklogin();
-        $m_cuti = new Cuti_model();
+{
+    checklogin();
 
-        // Periksa apakah cuti ada
-        $cuti = $m_cuti->find($idcuti);
-        if (!$cuti) {
-            return redirect()->back()->with('error', 'Cuti tidak ditemukan.');
-        }
+    $db = \Config\Database::connect();
+    $m_cuti = new \App\Models\Cuti_model(); // ini untuk cutihdr
 
-        // Hapus cuti dari database
-        $m_cuti->delete($idcuti);
-
-        return redirect()->back()->with('sukses', 'Cuti berhasil dibatalkan.');
+    $cutihdr = $m_cuti->find($idcuti);
+    if (!$cutihdr) {
+        return redirect()->back()->with('error', 'Cuti tidak ditemukan.');
     }
+
+    // Mulai transaksi
+    $db->transStart();
+
+    // Hapus data detail dari tabel `cuti`
+    $db->table('cuti')->where('idcuti', $idcuti)->delete();
+
+    // Hapus data header dari tabel `cutihdr` melalui model
+    $m_cuti->delete($idcuti);
+
+    // Selesaikan transaksi
+    $db->transComplete();
+
+    if ($db->transStatus() === false) {
+        return redirect()->back()->with('error', 'Gagal membatalkan cuti.');
+    }
+
+    return redirect()->back()->with('sukses', 'Cuti berhasil dibatalkan.');
+}
+
 
 
     public function izin($pegawai_pin)

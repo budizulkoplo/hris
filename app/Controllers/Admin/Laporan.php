@@ -53,9 +53,10 @@ class Laporan extends BaseController
             ->setCellValue('E1', 'Total Terlambat')
             ->setCellValue('F1', 'Total Lembur')
             ->setCellValue('G1', 'Konversi Lembur')
-            ->setCellValue('H1', 'Cuti')
-            ->setCellValue('I1', 'Tugas Luar')
-            ->setCellValue('J1', 'Total Hari Kerja');
+            ->setCellValue('H1', 'Double Shift')
+            ->setCellValue('I1', 'Cuti')
+            ->setCellValue('J1', 'Tugas Luar')
+            ->setCellValue('K1', 'Total Hari Kerja');
 
         $row = 2;
         $no = 1;
@@ -68,8 +69,9 @@ class Laporan extends BaseController
                 ->setCellValue('F' . $row, $pegawai['total_lembur_formatted'])
                 ->setCellValue('G' . $row, floor($pegawai['konversilembur']))
                 ->setCellValue('H' . $row, $pegawai['total_cuti'])
-                ->setCellValue('I' . $row, $pegawai['total_tugas_luar'])
-                ->setCellValue('J' . $row, $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['total_cuti'] + floor($pegawai['konversilembur']));
+                ->setCellValue('I' . $row, $pegawai['doubleshift'])
+                ->setCellValue('J' . $row, $pegawai['total_tugas_luar'])
+                ->setCellValue('K' . $row, $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['total_cuti'] + $pegawai['doubleshift'] + floor($pegawai['konversilembur']));
             $row++;
         }
 
@@ -137,6 +139,7 @@ class Laporan extends BaseController
                 'total_lembur_lalu' => $lemburBulanLalu[$pin] ?? 0,
                 'konversilembur' => 0,
                 'total_cuti' => 0,
+                'doubleshift' => 0,
                 'total_tugas_luar' => 0,
                 'sisa_lembur_jam_bulan_ini' => 0
             ];
@@ -188,9 +191,19 @@ class Laporan extends BaseController
             $summaryPegawai[$pin]['total_cuti']++;
         }
 
+        // Hitung doubleshift
+        if (!empty($row['status_khusus']) && strtolower($row['status_khusus']) === 'double shift') {
+            $summaryPegawai[$pin]['doubleshift']++;
+        }
+
         // Hitung tugas luar
         if ($isTugasLuar) {
             $summaryPegawai[$pin]['total_tugas_luar']++;
+        }
+
+        // Hitung Double Shift
+        if (!empty($row['status_khusus']) && strtolower($row['status_khusus']) === 'Double Shift') {
+            $summaryPegawai[$pin]['soubleshift']++;
         }
     }
 
@@ -386,76 +399,130 @@ private function timeToSeconds($time)
     }
 
     public function exportPayroll()
-{
-    $bulanTahun = $this->request->getPost('bulanTahun') ?? date('Y-m');
-    $tanggalAwal = date('Y-m-26', strtotime("$bulanTahun -1 month"));
-    $tanggalAkhir = date('Y-m-25', strtotime("$bulanTahun"));
+    {
+        $bulanTahun = $this->request->getPost('bulanTahun') ?? date('Y-m');
+        $tanggalAwal = date('Y-m-26', strtotime("$bulanTahun -1 month"));
+        $tanggalAkhir = date('Y-m-25', strtotime("$bulanTahun"));
 
-    $summaryPegawai = $this->generateSummaryAbsensi($tanggalAwal, $tanggalAkhir);
-    $db = \Config\Database::connect();
+        $summaryPegawai = $this->generateSummaryAbsensi($tanggalAwal, $tanggalAkhir);
+        
+        if (empty($summaryPegawai)) {
+            return redirect()->back()->with('error', 'Tidak ada data absensi untuk periode ini.');
+        }
 
-    // Hapus dulu data penggajian untuk periode ini
-    $db->table('penggajian')->where('periode', $bulanTahun)->delete();
+        $dataInsert = [];
+        foreach ($summaryPegawai as $pin => $pegawai) {
+            $dataInsert[] = [
+                'periode'         => $bulanTahun,
+                'pegawai_pin'     => $pin,
+                'jmlabsensi'      => $pegawai['total_hari_kerja'],
+                'jmlterlambat'    => $pegawai['total_terlambat'],
+                'konversilembur'  => floor($pegawai['konversilembur']),
+                'cuti'            => $pegawai['total_cuti'],
+                'doubleshift'     => $pegawai['doubleshift'],
+                'tugasluar'       => $pegawai['total_tugas_luar'],
+                'totalharikerja'  => $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['total_cuti'] + $pegawai['doubleshift'] + floor($pegawai['konversilembur']),
+            ];
+        }
 
-    // Insert ulang data penggajian
-    foreach ($summaryPegawai as $pin => $pegawai) {
-        $db->table('penggajian')->insert([
-            'periode'         => $bulanTahun,
-            'pegawai_pin'     => $pin,
-            'jmlabsensi'      => $pegawai['total_hari_kerja'],
-            'jmlterlambat'    => $pegawai['total_terlambat'], // pastikan format 'H:i:s'
-            'konversilembur'  => floor($pegawai['konversilembur']),
-            'cuti'            => $pegawai['total_cuti'],
-            'tugasluar'       => $pegawai['total_tugas_luar'],
-            'totalharikerja'  => $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['total_cuti'] + floor($pegawai['konversilembur']),
-        ]);
+        $db = \Config\Database::connect();
+        $db->transStart();
+        $db->table('penggajian')->where('periode', $bulanTahun)->delete(); // cukup 1x
+        $db->table('penggajian')->insertBatch($dataInsert);
+        $db->transComplete();
+
+        return redirect()->back()->with('success', 'Data penggajian berhasil di-refresh dan diekspor ke tabel.');
     }
 
-    return redirect()->back()->with('success', 'Data penggajian berhasil di-refresh dan diekspor ke tabel.');
-}
 
 public function kajian()
-    {
-        $m_kehadiran = new \App\Models\KehadiranKajianModel();
-        $m_kajian = new \App\Models\Kajian_model();
+{
+    $m_kehadiran = new \App\Models\KehadiranKajianModel();
+    $m_kajian = new \App\Models\Kajian_model();
 
-        // Ambil input filter
-        $idkajian = $this->request->getGet('idkajian');
-        $tanggal = $this->request->getGet('tanggal'); // format: Y-m-d
+    $idkajian = $this->request->getGet('idkajian');
+    $tanggal = $this->request->getGet('tanggal');
 
-        // Query dasar join dengan tabel kajian untuk menampilkan nama kajian
-        $query = $m_kehadiran->select('kehadiran_kajian.*, kajian.namakajian, kajian.tanggal as tanggal_kajian')
+    // Cek apakah parameter 'tanggal' diberikan
+    if (!empty($tanggal)) {
+        // Konversi tanggal menjadi format 'Y-m'
+        $periode = date('Y-m', strtotime($tanggal));
+    } else {
+        // Jika tidak, pakai 'periode' langsung dari query string atau default ke bulan ini
+        $periode = $this->request->getGet('periode') ?? date('Y-m');
+    }
+    $dataKehadiran = [];
+
+    if ($idkajian === 'api') {
+        // Ambil dari API untuk kajian Ahad Pagi
+        $urlApi = "https://kajian.pcmboja.com/api/kehadiran?periode={$periode}&dept=1";
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $urlApi,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_HTTPHEADER => [
+                'X-API-KEY: pkuboja2025',
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$response) {
+            throw new \Exception('Tidak dapat mengambil data absensi dari API.');
+        }
+
+        $responseArray = json_decode($response, true);
+        $allData = $responseArray['data'] ?? [];
+
+        // 🔍 Filter data berdasarkan tanggal jika ada
+        if (!empty($tanggal)) {
+            $dataKehadiran = array_filter($allData, function ($item) use ($tanggal) {
+                return isset($item['tgl_presensi']) && $item['tgl_presensi'] === $tanggal;
+            });
+            // array_filter menjaga key asli, kita reset key agar indexing mulai dari 0
+            $dataKehadiran = array_values($dataKehadiran);
+        } else {
+            $dataKehadiran = $allData;
+        }
+
+    } else {
+        // Ambil dari database
+        $query = $m_kehadiran
+            ->select('kehadiran_kajian.*, kajian.namakajian, kajian.tanggal as tanggal_kajian')
             ->join('kajian', 'kajian.idkajian = kehadiran_kajian.idkajian', 'left');
 
-        // Filter berdasarkan idkajian jika dipilih
         if (!empty($idkajian)) {
             $query->where('kehadiran_kajian.idkajian', $idkajian);
         }
 
-        // Filter berdasarkan tanggal scan jika dipilih
         if (!empty($tanggal)) {
             $query->where('DATE(kehadiran_kajian.waktu_scan)', $tanggal);
         }
 
-        // Eksekusi query
         $dataKehadiran = $query->orderBy('kehadiran_kajian.waktu_scan', 'ASC')->findAll();
-
-        // Ambil daftar kajian untuk dropdown filter
-        $dataKajian = $m_kajian->findAll();
-
-        // Kirim data ke view
-        $data = [
-            'title'         => 'Laporan Kehadiran Kajian',
-            'printstatus'   => 'print',
-            'dataKehadiran' => $dataKehadiran,
-            'dataKajian'    => $dataKajian,
-            'idkajian'      => $idkajian,
-            'tanggal'       => $tanggal,
-            'content'       => 'admin/laporan/kajian',
-        ];
-
-        return view('admin/layout/wrapper', $data);
     }
+
+    // Ambil semua data kajian untuk dropdown filter
+    $dataKajian = $m_kajian->findAll();
+
+    $data = [
+        'title'         => 'Laporan Kehadiran Kajian',
+        'dataKehadiran' => $dataKehadiran,
+        'dataKajian'    => $dataKajian,
+        'idkajian'      => $idkajian,
+        'tanggal'       => $tanggal,
+        'periode'       => $periode,
+        'content'       => 'admin/laporan/kajian',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+
 
 public function absensidokter()
 {
@@ -523,5 +590,154 @@ public function absensidokter()
 
     return view('admin/layout/wrapper', $data);
 }
+
+public function kegiatanSecurity()
+{
+    $tanggal = $this->request->getGet('tanggal') ?? date('Y-m-d');
+
+    $db = \Config\Database::connect();
+
+    // Ambil semua kegiatan dengan join ke pegawai
+    $builder = $db->table('kegiatan_security ks')
+        ->select('ks.*, p.pegawai_nama, p.bagian, p.jabatan')
+        ->join('pegawai p', 'ks.nik = p.nik', 'left')
+        ->where('ks.tgl', $tanggal)
+        ->orderBy('ks.nik')
+        ->orderBy('ks.jam');
+
+    $results = $builder->get()->getResultArray();
+
+    // Susun data per nik
+    $kegiatanPerPegawai = [];
+    foreach ($results as $row) {
+        $nik = $row['nik'];
+        if (!isset($kegiatanPerPegawai[$nik])) {
+            $kegiatanPerPegawai[$nik] = [
+                'nik' => $nik,
+                'pegawai_nama' => $row['pegawai_nama'] ?? '-',
+                'jabatan' => $row['jabatan'] ?? '-',
+                'bagian' => $row['bagian'] ?? '-',
+                'kegiatan' => []
+            ];
+        }
+        $kegiatanPerPegawai[$nik]['kegiatan'][] = [
+            'jam' => $row['jam'],
+            'kegiatan' => $row['kegiatan']
+        ];
+    }
+
+    $data = [
+        'title' => 'Laporan Kegiatan Security',
+        'tanggal' => $tanggal,
+        'kegiatanPerPegawai' => $kegiatanPerPegawai,
+        'content' => 'admin/laporan/kegiatansecurity',
+        'printstatus' => 'print',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+public function tugasluar()
+{
+    $db = \Config\Database::connect();
+
+    $periode = $this->request->getGet('periode') ?? date('Y-m');
+    [$tahun, $bulan] = explode('-', $periode);
+
+    $builder = $db->table('tugasluar tl')
+        ->select('tl.*, p.pegawai_nama, p.jabatan, p.bagian')
+        ->join('pegawai p', 'p.pegawai_pin = tl.pegawai_pin', 'left')
+        ->where('MONTH(tl.tgltugasluar)', $bulan)
+        ->where('YEAR(tl.tgltugasluar)', $tahun)
+        ->orderBy('tl.tgltugasluar', 'asc');
+
+    $tugasluar = $builder->get()->getResultArray();
+
+    $data = [
+        'title' => 'Laporan Tugas Luar Pegawai',
+        'tugasluar' => $tugasluar,
+        'periode' => $periode,
+        'content' => 'admin/laporan/tugasluar',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+public function rujukan()
+{
+    $db = \Config\Database::connect();
+    $periode = $this->request->getGet('periode') ?? date('Y-m');
+    [$tahun, $bulan] = explode('-', $periode);
+
+    $builder = $db->table('rujukan r')
+        ->select('r.*, p.pegawai_nama, p.jabatan, p.bagian')
+        ->join('pegawai p', 'p.pegawai_pin = r.pegawai_pin', 'left')
+        ->where('MONTH(r.tglrujukan)', $bulan)
+        ->where('YEAR(r.tglrujukan)', $tahun)
+        ->orderBy('r.tglrujukan', 'asc');
+
+    $rujukan = $builder->get()->getResultArray();
+
+    $data = [
+        'title' => 'Laporan Rujukan Pegawai',
+        'rujukan' => $rujukan,
+        'periode' => $periode,
+        'content' => 'admin/laporan/rujukan',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+public function cuti()
+{
+    $db = \Config\Database::connect();
+    $periode = $this->request->getGet('periode') ?? date('Y-m');
+    [$tahun, $bulan] = explode('-', $periode);
+
+    $builder = $db->table('cuti c')
+        ->select('c.*, p.pegawai_nama, p.jabatan, p.bagian')
+        ->join('pegawai p', 'p.pegawai_pin = c.pegawai_pin', 'left')
+        ->where('MONTH(c.tglcuti)', $bulan)
+        ->where('YEAR(c.tglcuti)', $tahun)
+        ->orderBy('c.tglcuti', 'asc');
+
+    $cuti = $builder->get()->getResultArray();
+
+    $data = [
+        'title' => 'Laporan Cuti Pegawai',
+        'cuti' => $cuti,
+        'periode' => $periode,
+        'content' => 'admin/laporan/cuti',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+public function lembur()
+{
+    $db = \Config\Database::connect();
+    $periode = $this->request->getGet('periode') ?? date('Y-m');
+    [$tahun, $bulan] = explode('-', $periode);
+
+    $builder = $db->table('lembur l')
+        ->select('l.*, p.pegawai_nama, p.jabatan, p.bagian')
+        ->join('pegawai p', 'p.pegawai_pin = l.pegawai_pin', 'left')
+        ->where('MONTH(l.tgllembur)', $bulan)
+        ->where('YEAR(l.tgllembur)', $tahun)
+        ->orderBy('l.tgllembur', 'asc');
+
+    $lembur = $builder->get()->getResultArray();
+
+    $data = [
+        'title' => 'Laporan Lembur Pegawai',
+        'lembur' => $lembur,
+        'periode' => $periode,
+        'content' => 'admin/laporan/lembur',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+}
+
+
 
 }

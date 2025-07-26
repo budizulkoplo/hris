@@ -20,7 +20,9 @@
             <tr>
                 <td><?= $no++ ?></td>
                 <td><?= esc($k['namakajian']) ?></td>
-                <td><?= date('d/m/Y', strtotime($k['tanggal'])) ?></td>
+                <td>
+                    <?= date('d/m/Y', strtotime(!empty($k['tanggal']) ? $k['tanggal'] : date('Y-m-d'))) ?>
+                </td>
                 <td><?= esc($k['lokasi']) ?></td>
                 <td><?= esc($k['keterangan']) ?></td>
                 <td>

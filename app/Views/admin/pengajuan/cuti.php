@@ -29,6 +29,20 @@
     </div>
 </div>
 
+<!-- Jenis Cuti -->
+<div class="form-group row">
+    <label class="col-3 col-form-label">Jenis Cuti</label>
+    <div class="col-9">
+        <select name="jeniscuti" class="form-control" id="jeniscuti" required>
+            <option value="">Pilih Jenis Cuti</option>
+            <option value="Cuti Tahunan">Cuti Tahunan</option>
+            <option value="Cuti Sakit">Cuti Sakit</option>
+            <option value="Cuti Tidak Dibayar">Cuti Tidak Dibayar</option>
+            <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+        </select>
+    </div>
+</div>
+
 <div class="form-group row">
     <label class="col-3 col-form-label">Tanggal Mulai Cuti</label>
     <div class="col-9">
@@ -60,7 +74,8 @@
     </div>
 </div>
 
-<div class="form-group row">
+<!-- Sisa Cuti -->
+<div class="form-group row" id="form_sisa_cuti">
     <label class="col-3 col-form-label">Sisa Cuti</label>
     <div class="col-9">
         <input type="text" class="form-control" value="<?= esc($sisa_cuti); ?>" readonly>
@@ -73,19 +88,6 @@
     <label class="col-3 col-form-label">Alasan Cuti</label>
     <div class="col-9">
         <textarea name="alasan" class="form-control" required></textarea>
-    </div>
-</div>
-
-<!-- Jenis Cuti -->
-<div class="form-group row">
-    <label class="col-3 col-form-label">Jenis Cuti</label>
-    <div class="col-9">
-        <select name="jeniscuti" class="form-control" required>
-            <option value="">Pilih Jenis Cuti</option>
-            <option value="Cuti Tahunan">Cuti Tahunan</option>
-            <option value="Cuti Sakit">Cuti Sakit</option>
-            <option value="Cuti Tidak Dibayar">Cuti Tidak Dibayar</option>
-        </select>
     </div>
 </div>
 
@@ -122,6 +124,7 @@
             <th>Tanggal Mulai</th>
             <th>Tanggal Selesai</th>
             <th>Jumlah Hari</th>
+            <th>Cuti</th>
             <th>Alasan</th>
             <th>Aksi</th>
         </tr>
@@ -135,6 +138,7 @@
                     <td><?= date('d-m-Y', strtotime($cuti['tgl_mulai'])); ?></td>
                     <td><?= date('d-m-Y', strtotime($cuti['tgl_selesai'])); ?></td>
                     <td><?= $cuti['jml_hari']; ?></td>
+                    <td><?= $cuti['jeniscuti']; ?></td>
                     <td><?= esc($cuti['alasancuti']); ?></td>
                     <td>
                         <a href="<?= base_url('admin/pengajuan/batalcuti/' . $cuti['idcuti']); ?>" 
@@ -157,21 +161,19 @@
     </tbody>
 </table>
 
+<!-- SCRIPT -->
 <script>
-   $(document).ready(function() {
+$(document).ready(function() {
     $('#tgl_mulai, #tgl_selesai').datepicker({
-        format: 'mm/dd/yyyy', // Format yang ditampilkan ke user
+        format: 'mm/dd/yyyy',
         autoclose: true,
         todayHighlight: true
     });
 
-    // Fungsi hitung jumlah hari
     function calculateDays() {
         var start = $('#tgl_mulai').datepicker('getDate');
         var end = $('#tgl_selesai').datepicker('getDate');
-        
         if (start && end) {
-            // Hitung selisih hari (termasuk hari terakhir)
             var timeDiff = end.getTime() - start.getTime();
             var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
             $('#jml_hari').val(diffDays);
@@ -179,5 +181,15 @@
     }
 
     $('#tgl_mulai, #tgl_selesai').change(calculateDays);
+
+    // Sembunyikan sisa cuti jika jenis cuti = cuti melahirkan
+    $('#jeniscuti').change(function() {
+        var jenis = $(this).val();
+        if (jenis === 'Cuti Melahirkan') {
+            $('#form_sisa_cuti').hide();
+        } else {
+            $('#form_sisa_cuti').show();
+        }
+    }).trigger('change'); // Jalankan saat awal load juga
 });
 </script>

@@ -6,6 +6,7 @@ use App\Models\Karu_model;
 use App\Models\Karupegawai_model;
 use App\Models\Kelompokjam_model;
 use App\Models\Jadwal_model;
+use App\Models\Doubleshift_model;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -34,67 +35,81 @@ class Jadwal extends BaseController
     $m_Karupegawai = new Karupegawai_model();
     $m_Kelompokjam = new Kelompokjam_model();
     $m_Jadwal = new Jadwal_model();
+    $doubleShiftModel = new Doubleshift_model();
 
     $idkaru = $this->request->getPost('idkaru');
     $periode = $this->request->getPost('periode'); // Format: YYYY-MM
 
     if (!$idkaru || !$periode) {
         return $this->response->setJSON([
-            'pegawaiList' => [],
-            'shiftList' => [],
-            'jadwalList' => []
+            'success' => false,
+            'message' => 'ID Karu dan Periode harus diisi',
+            'data' => [
+                'pegawaiList' => [],
+                'shiftList' => [],
+                'jadwalList' => [],
+                'doubleShiftList' => []
+            ]
         ]);
     }
-
-    // Ambil daftar pegawai berdasarkan idkaru
-    $pegawaiList = $m_Karupegawai
-        ->select('karupegawai.*, pegawai.pegawai_nama, pegawai.pegawai_pin, pegawai.bagian')
-        ->join('pegawai', 'pegawai.pegawai_pin = karupegawai.pegawai_pin')
-        ->where('karupegawai.idkaru', $idkaru)
-        ->findAll();
-
-    // Ambil daftar shift berdasarkan bagian kerja pegawai
-    $shiftList = [];
-    if (!empty($pegawaiList)) {
-        $bagianList = array_unique(array_column($pegawaiList, 'bagian'));
-        if (!empty($bagianList)) {
-            $shiftList = $m_Kelompokjam->whereIn('bagian', $bagianList)->findAll();
-        }
-    }
-
-    // Ambil data jadwal yang sudah tersimpan untuk pegawai di periode ini
-    $jadwalList = [];
-    if (!empty($pegawaiList)) {
-        $pegawaiPins = array_column($pegawaiList, 'pegawai_pin');
-
-        // Periode dari tanggal 26 bulan sebelumnya hingga tanggal 25 bulan ini
-        $tanggalAwal = date('Y-m-d', strtotime("$periode-26 -1 month"));
-        $tanggalAkhir = date('Y-m-d', strtotime("$periode-25"));
-
-        // Cek hasil tanggal
-        error_log("Periode: $tanggalAwal - $tanggalAkhir");
-
-        // Ambil data jadwal
-        $jadwalData = $m_Jadwal
-            ->whereIn('pegawai_pin', $pegawaiPins)
-            ->where('tgl >=', $tanggalAwal)
-            ->where('tgl <=', $tanggalAkhir)
+        // Get employee list by karu
+        $pegawaiList = $m_Karupegawai
+            ->select('karupegawai.*, pegawai.pegawai_nama, pegawai.pegawai_pin, pegawai.bagian')
+            ->join('pegawai', 'pegawai.pegawai_pin = karupegawai.pegawai_pin')
+            ->where('karupegawai.idkaru', $idkaru)
             ->findAll();
 
-        // Debug query (bisa dicek di log)
-        error_log($m_Jadwal->getLastQuery());
-
-        // Format ulang untuk frontend
-        foreach ($jadwalData as $jadwal) {
-            $jadwalList[$jadwal['pegawai_pin']][$jadwal['tgl']] = $jadwal['shift'];
+        // Get shift list based on employee departments
+        $shiftList = [];
+        if (!empty($pegawaiList)) {
+            $bagianList = array_unique(array_column($pegawaiList, 'bagian'));
+            if (!empty($bagianList)) {
+                $shiftList = $m_Kelompokjam->whereIn('bagian', $bagianList)->findAll();
+            }
         }
-    }
 
-    return $this->response->setJSON([
-        'pegawaiList' => $pegawaiList,
-        'shiftList' => $shiftList,
-        'jadwalList' => $jadwalList ?: []
-    ]);
+        // Initialize empty arrays
+        $jadwalList = [];
+        $doubleShiftList = [];
+        
+        if (!empty($pegawaiList)) {
+            $pegawaiPins = array_column($pegawaiList, 'pegawai_pin');
+            
+            // Calculate period dates (26th previous month to 25th current month)
+            $tanggalAwal = date('Y-m-d', strtotime("$periode-26 -1 month"));
+            $tanggalAkhir = date('Y-m-d', strtotime("$periode-25"));
+
+            // Get schedule data
+            $jadwalData = $m_Jadwal
+                ->whereIn('pegawai_pin', $pegawaiPins)
+                ->where('tgl >=', $tanggalAwal)
+                ->where('tgl <=', $tanggalAkhir)
+                ->findAll();
+
+            // Format schedule data for frontend
+            foreach ($jadwalData as $jadwal) {
+                $jadwalList[$jadwal['pegawai_pin']][$jadwal['tgl']] = $jadwal['shift'];
+            }
+
+            // Get double shift data for the same period
+            $doubleShiftData = $doubleShiftModel
+                ->whereIn('pegawai_pin', $pegawaiPins)
+                ->where('tglshift >=', $tanggalAwal)
+                ->where('tglshift <=', $tanggalAkhir)
+                ->findAll();
+
+            // Format double shift data for frontend
+            foreach ($doubleShiftData as $ds) {
+                $doubleShiftList[$ds['pegawai_pin']][$ds['tglshift']] = true;
+            }
+        }
+
+        return $this->response->setJSON([
+                'pegawaiList' => $pegawaiList,
+                'shiftList' => $shiftList,
+                'jadwalList' => $jadwalList,
+                'doubleShiftList' => $doubleShiftList
+        ]);
 }
 
 public function store()
@@ -365,6 +380,39 @@ public function exportCSV()
         $writer->save('php://output');
         exit();
     }
+
+public function saveDoubleShift()
+{
+    $pegawai_pin = $this->request->getPost('pegawai_pin');
+    $tglshift = $this->request->getPost('tglshift');
+    $is_double = $this->request->getPost('is_double');
+
+    // Load your model
+    $doubleShiftModel = new Doubleshift_model();
+
+    if ($is_double) {
+        // Check if record already exists
+        $existing = $doubleShiftModel->where('pegawai_pin', $pegawai_pin)
+                                    ->where('tglshift', $tglshift)
+                                    ->first();
+        
+        if (!$existing) {
+            // Insert new record
+            $doubleShiftModel->insert([
+                'pegawai_pin' => $pegawai_pin,
+                'tglshift' => $tglshift,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+    } else {
+        // Delete record if exists
+        $doubleShiftModel->where('pegawai_pin', $pegawai_pin)
+                        ->where('tglshift', $tglshift)
+                        ->delete();
+    }
+
+    return $this->response->setJSON(['success' => true]);
+}
 
 
 }

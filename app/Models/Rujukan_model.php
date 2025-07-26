@@ -9,5 +9,5 @@ class Rujukan_model extends Model
     protected $table      = 'rujukan';
     protected $primaryKey = 'idrujukan';
 
-    protected $allowedFields = ['pegawai_pin', 'tglrujukan', 'keterangan', 'created_at'];
+    protected $allowedFields = ['pegawai_pin','namapasien', 'tglrujukan', 'keterangan', 'created_at'];
 }

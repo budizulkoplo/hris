@@ -86,6 +86,7 @@
             <th class="text-center">Sisa Lembur</th>
             <th class="text-center">Lembur Bulan Ini</th>
             <th class="text-center">Konversi Lembur</th>
+            <th class="text-center">Double Shift</th>
             <th class="text-center">Cuti</th>
             <th class="text-center">Tugas Luar</th>
             <th class="text-center">Total Hari Kerja</th>
@@ -111,10 +112,11 @@
                 <td class="text-center">
                     <?= floor($pegawai['konversilembur']) ?>
                 </td>
+                <td class="text-center"><?= $pegawai['doubleshift'] ?></td>
                 <td class="text-center"><?= $pegawai['total_cuti'] ?></td>
                 <td class="text-center"><?= $pegawai['total_tugas_luar'] ?></td>
                 <td class="text-center">
-                    <?= $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['total_cuti'] + floor($pegawai['konversilembur']) ?>
+                    <?= $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['doubleshift']+$pegawai['total_cuti'] + floor($pegawai['konversilembur']) ?>
                 </td>
                 <td class="text-center <?= $pegawai['sisa_lembur_bulan_ini'] > 0 ? 'text-success fw-bold' : '' ?>">
                     <?= $pegawai['sisa_lembur_bulan_ini'] ?> Jam

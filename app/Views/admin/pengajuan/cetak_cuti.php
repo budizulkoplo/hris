@@ -1,3 +1,6 @@
+<?php
+$isDokter = stripos($pegawai['pegawai_nama'], 'dr') === 0;
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -210,27 +213,37 @@
             </table>
             
             <!-- Tanda Tangan Kolom Kiri -->
-            <div style="display: flex; justify-content: space-between; ">
+                        <div style="display: flex; justify-content: space-between;">
                 <div class="ttd-box">
                     <div>Diajukan oleh</div>
                     <div class="signature-space"></div>
                     <div class="ttd-line">(<?= $pegawai['pegawai_nama'] ?>)</div>
                     <div><?= $pegawai['jabatan'] ?></div>
                 </div>
-                
+
                 <div class="ttd-box">
                     <div>Mengetahui</div>
                     <div class="signature-space"></div>
-                    <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
-                    <div>KARU</div>
+                    <?php if ($isDokter): ?>
+                        <div class="ttd-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
+                        <div>SDI</div>
+                    <?php else: ?>
+                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
+                        <div>KARU</div>
+                    <?php endif; ?>
                 </div>
             </div>
-            
+
             <div class="ttd-sdi">
                 <div>Disetujui oleh</div>
                 <div class="signature-space"></div>
-                <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
-                <div>SDI</div>
+                <?php if ($isDokter): ?>
+                    <div class="sdi-line">(dr. Arfa Bima Firizqina, MARS)</div>
+                    <div>Direktur</div>
+                <?php else: ?>
+                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
+                    <div>SDI</div>
+                <?php endif; ?>
             </div>
         </div>
         
@@ -332,27 +345,37 @@
             </table>
             
             <!-- Tanda Tangan Kolom Kanan -->
-            <div style="display: flex; justify-content: space-between; ">
+            <div style="display: flex; justify-content: space-between;">
                 <div class="ttd-box">
                     <div>Diajukan oleh</div>
                     <div class="signature-space"></div>
                     <div class="ttd-line">(<?= $pegawai['pegawai_nama'] ?>)</div>
                     <div><?= $pegawai['jabatan'] ?></div>
                 </div>
-                
+
                 <div class="ttd-box">
                     <div>Mengetahui</div>
                     <div class="signature-space"></div>
-                    <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
-                    <div>KARU</div>
+                    <?php if ($isDokter): ?>
+                        <div class="ttd-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
+                        <div>SDI</div>
+                    <?php else: ?>
+                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
+                        <div>KARU</div>
+                    <?php endif; ?>
                 </div>
             </div>
-            
+
             <div class="ttd-sdi">
                 <div>Disetujui oleh</div>
                 <div class="signature-space"></div>
-                <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
-                <div>SDI</div>
+                <?php if ($isDokter): ?>
+                    <div class="sdi-line">(dr. Arfa Bima Firizqina, MARS)</div>
+                    <div>Direktur</div>
+                <?php else: ?>
+                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
+                    <div>SDI</div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

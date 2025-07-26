@@ -21,8 +21,7 @@
         <thead class="text-center">
     <tr>
         <th rowspan="2">Nama Pegawai</th>
-        <th rowspan="2">Cetak Slip</th>
-        <th colspan="17" class="text-center">GAJI</th>
+        <th colspan="19" class="text-center">GAJI</th>
         <th colspan="9" class="text-center">POTONGAN</th>
         <th rowspan="2">Grand Total</th>
     </tr>
@@ -38,7 +37,9 @@
         <th>Jml Lembur</th>
         <th>Cuti</th>
         <th>Jml. Tugas Luar</th>
+        <th>Double Shift</th>
         <th>Total Hari Kerja</th>
+        <th>Jml Rujukan</th>
         <th>Tunj. Rujukan</th>
         <th>Uang Makan</th>
         <th>Kehadiran</th>
@@ -66,7 +67,7 @@
             $kehadiranNominal = $row['kehadiran'] ?? 0;
 
             $uangMakan = $totalHariKerja * $row['uangmakan'];
-            $kehadiranVal = $row['jmlabsensi'] * $kehadiranNominal;
+            $kehadiranVal = $row['totalharikerja'] * $kehadiranNominal;
             $tugasluarval = $row['tugasluar'] * $kehadiranNominal;
             $lemburVal = $konversiLembur > 0 ? $konversiLembur * $kehadiranNominal : 0;
 
@@ -81,59 +82,40 @@
         ?>
         <tr>
             <td><?= esc($row['pegawai_nama']) ?></td>
-            <td class="text-center">
-                <a href="<?= base_url('admin/komponengaji/slip/' . $row['pegawai_pin'] . '?periode=' . $periode) ?>" 
-                target="_blank" 
-                class="btn btn-sm btn-success mb-1">
-                    <i class="fas fa-print"></i> Cetak
-                </a>
-                <br>
-                <a href="<?= base_url('admin/komponengaji/kirim_wa/' . $row['pegawai_pin'] . '?periode=' . $periode) ?>"
-   class="btn btn-sm btn-success mb-1">
-   <i class="fab fa-whatsapp"></i> Kirim WA
-</a>
 
-                <br>
-                <a href="mailto:<?= $row['email'] ?>?subject=Slip%20Gaji%20<?= urlencode(date('F Y', strtotime($periode . '-01'))) ?>&body=Assalamualaikum%20<?= urlencode($row['pegawai_nama']) ?>%2C%0ASlip%20gaji%20Anda%20untuk%20periode%20<?= urlencode(date('F Y', strtotime($periode . '-01'))) ?>%20sudah%20tersedia."
-                class="btn btn-sm btn-info">
-                    <i class="fas fa-envelope"></i> Email
-                </a>
-            </td>
+            <td class="text-end" data-order="<?= $row['gajipokok'] ?>">Rp. <?= number_format($row['gajipokok'], 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['tunjstruktural'] ?>">Rp. <?= number_format($row['tunjstruktural'], 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['tunjfungsional'] ?>">Rp. <?= number_format($row['tunjfungsional'], 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['tunjkeluarga'] ?>">Rp. <?= number_format($row['tunjkeluarga'], 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['tunjapotek'] ?>">Rp. <?= number_format($row['tunjapotek'], 0, ',', '.') ?></td>
 
-
-            <!-- <td class="text-center">
-                <input type="number" class="form-control rujukan-input"
-                       data-pin="<?= esc($row['pegawai_pin']) ?>"
-                       value="<?= esc($jmlrujukan) ?>">
-            </td> -->
-            <td class="text-end">Rp. <?= number_format($row['gajipokok'], 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['tunjstruktural'], 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['tunjfungsional'], 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['tunjkeluarga'], 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['tunjapotek'], 0, ',', '.') ?></td>
             <td class="text-center"><?= esc($row['jmlabsensi']) ?></td>
             <td class="text-center"><?= esc($row['jmlterlambat']) ?></td>
             <td class="text-center"><?= esc($konversiLembur) ?></td>
             <td class="text-center"><?= esc($row['cuti']) ?></td>
             <td class="text-center"><?= esc($row['tugasluar']) ?></td>
+            <td class="text-center"><?= esc($row['doubleshift']) ?></td>
             <td class="text-center"><?= esc($totalHariKerja) ?></td>
-            <td class="text-end">Rp. <?= number_format($tunjRujukan, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($uangMakan, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($kehadiranVal, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($tugasluarval, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($lemburVal, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($jumlah, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($zis, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['pph21'] ?? 0, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['qurban'] ?? 0, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['potransport'] ?? 0, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($infaqPdm, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($bpjs ?? 0, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['bpjstk'] ?? 0, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($row['koperasi'], 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($potongan, 0, ',', '.') ?></td>
-            <td class="text-end">Rp. <?= number_format($grandtotal, 0, ',', '.') ?></td>
-            
+            <td class="text-center"><?= esc($row['jmlrujukan']) ?></td>
+
+            <td class="text-end" data-order="<?= $tunjRujukan ?>">Rp. <?= number_format($tunjRujukan, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $uangMakan ?>">Rp. <?= number_format($uangMakan, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $kehadiranVal ?>">Rp. <?= number_format($kehadiranVal, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $tugasluarval ?>">Rp. <?= number_format($tugasluarval, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $lemburVal ?>">Rp. <?= number_format($lemburVal, 0, ',', '.') ?></td>
+
+            <td class="text-end" data-order="<?= $jumlah ?>">Rp. <?= number_format($jumlah, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $zis ?>">Rp. <?= number_format($zis, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['pph21'] ?? 0 ?>">Rp. <?= number_format($row['pph21'] ?? 0, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['qurban'] ?? 0 ?>">Rp. <?= number_format($row['qurban'] ?? 0, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['potransport'] ?? 0 ?>">Rp. <?= number_format($row['potransport'] ?? 0, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $infaqPdm ?>">Rp. <?= number_format($infaqPdm, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $bpjs ?? 0 ?>">Rp. <?= number_format($bpjs ?? 0, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['bpjstk'] ?? 0 ?>">Rp. <?= number_format($row['bpjstk'] ?? 0, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $row['koperasi'] ?>">Rp. <?= number_format($row['koperasi'], 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $potongan ?>">Rp. <?= number_format($potongan, 0, ',', '.') ?></td>
+            <td class="text-end" data-order="<?= $grandtotal ?>">Rp. <?= number_format($grandtotal, 0, ',', '.') ?></td>
+
         </tr>
     <?php endforeach; ?>
 </tbody>
@@ -174,4 +156,13 @@
             });
         });
     </script>
+
+    <script>
+        document.getElementById("exportExcel").addEventListener("click", function () {
+            const periode = "<?= esc($periode) ?>"; // ambil dari PHP
+            const url = "<?= base_url('admin/komponengaji/exportexcel') ?>?periode=" + encodeURIComponent(periode);
+            window.open(url, "_blank"); // buka di tab baru
+        });
+    </script>
+
 <?php endif; ?>

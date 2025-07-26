@@ -150,5 +150,48 @@ public function update($idgaji)
     return redirect()->to('/admin/mastergaji')->with('sukses', 'Gaji pegawai berhasil diperbarui.');
 }
 
+public function listgaji($pegawai_pin)
+{
+    checklogin(); // Jika kamu pakai proteksi login
+
+    $m_pegawai = new \App\Models\Pegawai_model();
+    $m_mastergaji = new \App\Models\Mastergaji_model();
+
+    // Ambil data pegawai
+    $pegawai = $m_pegawai->where('pegawai_pin', $pegawai_pin)->first();
+
+    if (!$pegawai) {
+        return redirect()->to('/admin/mastergaji')->with('gagal', 'Pegawai tidak ditemukan.');
+    }
+
+    // Ambil semua riwayat gaji pegawai (urutkan dari tglaktif terbaru)
+    $listgaji = $m_mastergaji->where('pegawai_pin', $pegawai_pin)
+                    ->orderBy('tglaktif', 'desc')
+                    ->findAll();
+
+    $data = [
+        'title'     => 'Riwayat Gaji Pegawai',
+        'pegawai'   => $pegawai,
+        'listgaji'  => $listgaji,
+        'content'   => 'admin/mastergaji/listgaji',
+    ];
+
+    echo view('admin/layout/wrapper', $data);
+}
+
+public function hapus($idgaji)
+{
+    $m_mastergaji = new \App\Models\Mastergaji_model();
+    $gaji = $m_mastergaji->find($idgaji);
+
+    if (!$gaji) {
+        return redirect()->to('/admin/mastergaji')->with('gagal', 'Data gaji tidak ditemukan.');
+    }
+
+    $m_mastergaji->delete($idgaji);
+
+    return redirect()->to('/admin/mastergaji/listgaji/' . $gaji['pegawai_pin'])->with('sukses', 'Data gaji berhasil dihapus.');
+}
+
 
 }

@@ -57,6 +57,8 @@
             <option value="1" <?= $gaji['verifikasi'] == '1' ? 'selected' : '' ?>>Terverifikasi</option>
         </select>
     </div>
-
-    <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+    <a href="<?= base_url('admin/mastergaji') ?>" class="btn btn-primary btn-sm">
+        <i class="fa fa-arrow-left"></i> Kembali ke Daftar Pegawai
+    </a>
+    <button type="submit" class="btn btn-success btn-sm">Simpan Perubahan</button>
 </form>

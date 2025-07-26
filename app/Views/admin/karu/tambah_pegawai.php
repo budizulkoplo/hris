@@ -53,7 +53,7 @@
 <!-- Daftar Pegawai di Kelompok Kerja -->
 <h4 class="mt-4">Daftar Pegawai di Kelompok Kerja</h4>
 <div class="table-responsive">
-    <table class="table table-bordered">
+    <table id="TabelKaruPegawai" class="table table-bordered">
         <thead>
             <tr>
                 <th>No</th>
@@ -109,3 +109,13 @@
         </tbody>
     </table>
 </div>
+<script>
+    $(document).ready(function() {
+        $('#TabelKaruPegawai').DataTable({
+            pageLength: 25, // Jumlah baris per halaman default
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+            }
+        });
+    });
+</script>

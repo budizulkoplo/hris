@@ -83,14 +83,6 @@ thead .fixed-column {
 .wide-select {
     min-width: 68px;
 }
-
-.double-shift-check {
-    text-align: center;
-    padding: 2px;
-    font-size: 12px;
-    color:rgb(255, 80, 36);
-    font-weight: bold;
-}
 </style>
 
 <script>
@@ -160,10 +152,8 @@ $(document).ready(function () {
                             tanggalKerja.forEach(function (tgl) {
                                 const tanggalFormat = tgl.tahun + '-' + ('0' + tgl.bulan).slice(-2) + '-' + ('0' + tgl.tgl).slice(-2);
                                 const selectedShift = response.jadwalList?.[pegawai.pegawai_pin]?.[tanggalFormat] || '';
-                                const isDoubleShift = response.doubleShiftList?.[pegawai.pegawai_pin]?.[tanggalFormat] || false;
 
-                                pegawaiHtml += '<td>';
-                                pegawaiHtml += '<select name="jadwal[' + pegawai.pegawai_pin + '][' + tanggalFormat + ']" class="form-control wide-select autosave" data-pegawai="' + pegawai.pegawai_pin + '" data-tgl="' + tanggalFormat + '">';
+                                pegawaiHtml += '<td><select name="jadwal[' + pegawai.pegawai_pin + '][' + tanggalFormat + ']" class="form-control wide-select autosave" data-pegawai="' + pegawai.pegawai_pin + '" data-tgl="' + tanggalFormat + '">';
                                 pegawaiHtml += '<option value="">-</option>';
 
                                 response.shiftList.forEach(function (shift) {
@@ -181,11 +171,7 @@ $(document).ready(function () {
                                     }
                                 });
 
-                                pegawaiHtml += '</select>';
-                                pegawaiHtml += '<div class="double-shift-check">';
-                                pegawaiHtml += '<input type="checkbox" class="double-shift" data-pegawai="' + pegawai.pegawai_pin + '" data-tgl="' + tanggalFormat + '" ' + (isDoubleShift ? 'checked' : '') + '> 2 Shift';
-                                pegawaiHtml += '</div>';
-                                pegawaiHtml += '</td>';
+                                pegawaiHtml += '</select></td>';
                             });
 
                             pegawaiHtml += '</tr>';
@@ -197,7 +183,7 @@ $(document).ready(function () {
                     pegawaiHtml += '</tbody></table></div>';
                     $('#pegawaiContainer').html(pegawaiHtml);
 
-                    // Autosave handler for shift
+                    // Autosave handler
                     $('.autosave').change(function () {
                         const pegawai_pin = $(this).data('pegawai');
                         const tgl = $(this).data('tgl');
@@ -212,29 +198,6 @@ $(document).ready(function () {
                             },
                             error: function (xhr, status, error) {
                                 alert("Gagal menyimpan jadwal: " + error);
-                            }
-                        });
-                    });
-
-                    // Autosave handler for double shift
-                    $('.double-shift').change(function () {
-                        const pegawai_pin = $(this).data('pegawai');
-                        const tglshift = $(this).data('tgl');
-                        const isChecked = $(this).is(':checked') ? 1 : 0;
-
-                        $.ajax({
-                            url: "<?= base_url('admin/jadwal/saveDoubleShift'); ?>",
-                            type: "POST",
-                            data: { 
-                                pegawai_pin: pegawai_pin, 
-                                tglshift: tglshift,
-                                is_double: isChecked
-                            },
-                            success: function (response) {
-                                console.log("Double shift tersimpan:", response);
-                            },
-                            error: function (xhr, status, error) {
-                                alert("Gagal menyimpan double shift: " + error);
                             }
                         });
                     });
@@ -258,6 +221,7 @@ $(document).ready(function () {
 });
 </script>
 
+
 <script>
 document.getElementById('exportExcel').addEventListener('click', function () {
     var idkaru = document.getElementById('idkaru').value;  // Ambil nilai ID Karu dari input
@@ -271,4 +235,8 @@ document.getElementById('exportExcel').addEventListener('click', function () {
     var url = "<?= base_url('admin/jadwal/exportCSV') ?>?idkaru=" + idkaru + "&periode=" + periode;
     window.location.href = url; // Redirect ke URL export
 });
+
+
 </script>
+
+

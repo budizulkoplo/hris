@@ -13,6 +13,9 @@
     </div>
 <?php endif; ?>
 
+<h4 class="mb-3">Form Pengajuan Rujukan</h4>
+
+<!-- Pegawai -->
 <div class="form-group row">
     <label class="col-3 col-form-label">Pegawai</label>
     <div class="col-9">
@@ -29,11 +32,20 @@
     </div>
 </div>
 
+<!-- Nama Pasien -->
+<div class="form-group row">
+    <label class="col-3 col-form-label">Nama Pasien</label>
+    <div class="col-9">
+        <input type="text" name="namapasien" class="form-control" required maxlength="100" placeholder="Contoh: Nama Istri / Anak" autocomplete="off">
+    </div>
+</div>
+
+<!-- Tanggal Rujukan -->
 <div class="form-group row">
     <label class="col-3 col-form-label">Tanggal Rujukan</label>
     <div class="col-9">
         <div class="input-group date">
-            <input type="text" name="tanggal_rujukan" id="tanggal_rujukan" class="form-control" required autocomplete="off">
+            <input type="text" name="tanggal" id="tanggal" class="form-control" required autocomplete="off" placeholder="MM/DD/YYYY">
             <div class="input-group-append">
                 <span class="input-group-text"><i class="fa fa-calendar"></i></span>
             </div>
@@ -41,13 +53,15 @@
     </div>
 </div>
 
+<!-- Keterangan -->
 <div class="form-group row">
     <label class="col-3 col-form-label">Keterangan</label>
     <div class="col-9">
-        <textarea name="keterangan" class="form-control" required></textarea>
+        <textarea name="keterangan" class="form-control" rows="3" required maxlength="255" placeholder="Masukkan keterangan rujukan..."></textarea>
     </div>
 </div>
 
+<!-- Tombol -->
 <div class="mt-3">
     <button type="submit" class="btn btn-primary">
         <i class="fa fa-save"></i> Ajukan Rujukan
@@ -56,13 +70,12 @@
 </div>
 
 <?= form_close(); ?>
-
-<!-- Tabel Daftar Rujukan -->
-<h4 class="mt-4">Daftar Rujukan Pegawai</h4>
-<table id="table" class="table table-bordered">
+<h4 class="mt-4">Riwayat Rujukan</h4>
+<table class="table table-bordered table-striped">
     <thead>
         <tr>
             <th>No</th>
+            <th>Nama Pasien</th>
             <th>Tanggal Rujukan</th>
             <th>Keterangan</th>
             <th>Aksi</th>
@@ -74,39 +87,31 @@
             <?php foreach ($daftar_rujukan as $r) : ?>
                 <tr>
                     <td><?= $no++; ?></td>
+                    <td><?= esc($r['namapasien']); ?></td>
                     <td><?= date('d-m-Y', strtotime($r['tglrujukan'])); ?></td>
                     <td><?= esc($r['keterangan']); ?></td>
                     <td>
-                        <a href="<?= base_url('admin/pengajuan/batalRujukan/' . $r['idrujukan']); ?>" 
-                            class="btn btn-danger btn-sm" 
-                            onclick="return confirm('Yakin ingin membatalkan rujukan ini?');">
+                        <a href="<?= base_url('admin/pengajuan/batalRujukan/' . $r['idrujukan']); ?>"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Yakin ingin membatalkan rujukan ini?');">
                             <i class="fa fa-times"></i> Batal
-                        </a>
-                        <a href="<?= base_url('admin/pengajuan/cetak_rujukan/' . $r['idrujukan']); ?>" 
-                            class="btn btn-sm btn-primary" target="_blank">
-                            <i class="fa fa-print"></i> Cetak Surat
                         </a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         <?php else : ?>
             <tr>
-                <td colspan="4" class="text-center">Belum ada riwayat rujukan</td>
+                <td colspan="5" class="text-center">Belum ada riwayat rujukan</td>
             </tr>
         <?php endif; ?>
     </tbody>
 </table>
-
 <script>
-    $(document).ready(function () {
-        $('#table').DataTable({
-            "pageLength": 50
-        });
-
-        $('#tanggal_rujukan').datepicker({
-            format: 'mm/dd/yyyy',
-            autoclose: true,
-            todayHighlight: true
-        });
+$(document).ready(function() {
+    $('#tanggal').datepicker({
+        format: 'mm/dd/yyyy',
+        autoclose: true,
+        todayHighlight: true
     });
+});
 </script>

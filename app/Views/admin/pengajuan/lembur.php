@@ -98,11 +98,19 @@
 </table>
 
 <script>
-     $(document).ready(function() {
+    $(document).ready(function() {
+        // Datepicker untuk input tanggal
         $('#tanggal_lembur').datepicker({
             format: 'yyyy-mm-dd', 
             autoclose: true,
             todayHighlight: true
+        });
+
+        // Inisialisasi DataTables
+        $('#LemburTable').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json" // Bahasa Indonesia
+            }
         });
     });
 </script>

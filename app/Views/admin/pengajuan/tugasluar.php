@@ -42,7 +42,23 @@
 </div>
 
 <div class="form-group row">
-    <label class="col-3 col-form-label">Alasan Tugas Luar</label>
+    <label class="col-3 col-form-label">Waktu</label>
+    <div class="col-9">
+        <div class="input-group date">
+            <input type="time" name="waktu" id="waktu" class="form-control" required autocomplete="off">
+        </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <label class="col-3 col-form-label">Tempat</label>
+    <div class="col-9">
+        <input type="text" name="lokasi" id="lokasi" class="form-control" autocomplete="off">
+    </div>
+</div>
+
+<div class="form-group row">
+    <label class="col-3 col-form-label">Kegiatan</label>
     <div class="col-9">
         <textarea name="alasan" class="form-control" required></textarea>
     </div>
@@ -64,7 +80,7 @@
         <tr>
             <th>No</th>
             <th>Tanggal Tugas Luar</th>
-            <th>Alasan</th>
+            <th>Kegiatan</th>
             <th>Aksi</th>
         </tr>
     </thead>

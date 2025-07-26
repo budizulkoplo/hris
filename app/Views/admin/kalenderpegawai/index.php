@@ -471,7 +471,7 @@ function secondsToTime($seconds) {
     <!-- Summary Boxes -->
     <div class="summary-container">
         <div class="summary-box">
-            <div class="summary-title">Total Hari Kerja</div>
+            <div class="summary-title">Total Absensi Reguler</div>
             <div class="summary-value"><?= $totalWorkDays ?> hari</div>
         </div>
         

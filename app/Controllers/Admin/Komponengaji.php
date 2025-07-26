@@ -4,6 +4,8 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\Komponengaji_model;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Komponengaji extends BaseController
 {
@@ -17,27 +19,36 @@ class Komponengaji extends BaseController
     // Ambil data rekap gaji per periode
     $rekap = $model->getRekapGaji($periode);
 
-    // Ambil data rujukan yang sudah ada di tabel rujukan berdasarkan periode
+    // Ambil data rujukan dari tabel rujukan berdasarkan bulan periode
     $db = \Config\Database::connect();
-    $rujukanData = $db->table('rujukan')
-                      ->where('periode', $periode)
-                      ->get()->getResultArray();
 
-    // Mapping rujukan: key-nya pakai pegawai_pin
+    // Misal periode = '2025-07' -> ambil dari tglrujukan
+    $startDate = $periode . '-01';
+    $endDate = date('Y-m-t', strtotime($startDate)); // ambil akhir bulan
+
+    $rujukanData = $db->table('rujukan')
+                    ->select('pegawai_pin, COUNT(*) as jmlrujukan')
+                    ->where('tglrujukan >=', $startDate)
+                    ->where('tglrujukan <=', $endDate)
+                    ->groupBy('pegawai_pin')
+                    ->get()->getResultArray();
+
+    // Mapping rujukan berdasarkan pegawai_pin
     $mapRujukan = [];
     foreach ($rujukanData as $rj) {
         $mapRujukan[$rj['pegawai_pin']] = $rj['jmlrujukan'];
     }
 
-    // Gabungkan data rujukan ke dalam rekap berdasarkan pegawai_pin
+    // Gabungkan data rujukan ke dalam array rekap
     foreach ($rekap as &$row) {
-        // Jika tidak ada data rujukan untuk pegawai, set default 0
         $row['jmlrujukan'] = $mapRujukan[$row['pegawai_pin']] ?? 0;
     }
+
 
     // Data untuk view
     $data = [
         'title'   => 'Komponen Penggajian Pegawai',
+        'excelstatus'     => 'excel',
         'periode' => $periode,
         'rekap'   => $rekap,
         'content' => 'admin/komponengaji/index',
@@ -146,90 +157,84 @@ public function slip($pin)
     ]);
 }
 
-public function kirim_wa($pin)
+public function exportexcel()
 {
-    checklogin();
+    checklogin(); // Validasi login
 
     $periode = $this->request->getGet('periode') ?? date('Y-m');
     $model   = new \App\Models\Komponengaji_model();
 
-    // Ambil semua rekap gaji pada periode tersebut
-    $rekapList = $model->getRekapGaji($periode);
+    $rekap = $model->getRekapGaji($periode);
 
-    // Ambil data rujukan dari DB untuk periode ini
+    // Ambil rujukan dari DB
     $db = \Config\Database::connect();
-    $rujukanData = $db->table('rujukan')
-                      ->where('periode', $periode)
-                      ->get()->getResultArray();
+    $startDate = $periode . '-01';
+    $endDate = date('Y-m-t', strtotime($startDate)); // ambil akhir bulan
 
-    // Mapping rujukan berdasarkan pegawai_pin
+    $rujukanData = $db->table('rujukan')
+                    ->select('pegawai_pin, COUNT(*) as jmlrujukan')
+                    ->where('tglrujukan >=', $startDate)
+                    ->where('tglrujukan <=', $endDate)
+                    ->groupBy('pegawai_pin')
+                    ->get()->getResultArray();
     $mapRujukan = [];
     foreach ($rujukanData as $rj) {
         $mapRujukan[$rj['pegawai_pin']] = $rj['jmlrujukan'];
     }
 
-    // Cari data pegawai dengan pin yang cocok
-    $rekap = null;
-    foreach ($rekapList as $row) {
-        if ($row['pegawai_pin'] == $pin) {
-            $row['jmlrujukan'] = $mapRujukan[$pin] ?? 0;
-            $rekap = $row;
-            break;
-        }
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // Header
+    $header = [
+        'Nama Pegawai', 'Gaji Pokok', 'Tunj. Struktural', 'Tunj. Fungsional', 'Tunj. Keluarga', 'Tunj. Apotek',
+        'Absensi', 'Terlambat', 'Lembur', 'Cuti', 'Tugas Luar', 'Double Shift', 'Total Hari Kerja',
+        'Jml Rujukan', 'Tunj. Rujukan', 'Uang Makan', 'Kehadiran', 'Tugas Luar Val', 'Lembur Val',
+        'Jumlah', 'ZIS', 'PPH21', 'Qurban', 'Pot. Transport', 'Infaq PDM', 'BPJS', 'BPJS TK', 'Koperasi', 'Total Potongan', 'Grand Total'
+    ];
+    $sheet->fromArray($header, null, 'A1');
+
+    $rowIndex = 2;
+    foreach ($rekap as $row) {
+        $jmlrujukan = $mapRujukan[$row['pegawai_pin']] ?? 0;
+        $tunjRujukan = $jmlrujukan * $row['rujukan'];
+        $totalHariKerja = $row['totalharikerja'] ?? 0;
+        $kehadiranNominal = $row['kehadiran'] ?? 0;
+        $konversiLembur = $row['konversilembur'] ?? 0;
+
+        $uangMakan = $totalHariKerja * $row['uangmakan'];
+        $kehadiranVal = $row['totalharikerja'] * $kehadiranNominal;
+        $tugasluarval = $row['tugasluar'] * $kehadiranNominal;
+        $lemburVal = $konversiLembur * $kehadiranNominal;
+
+        $jumlah = $row['gajipokok'] + $row['tunjstruktural'] + $row['tunjkeluarga'] + $row['tunjfungsional'] + $row['tunjapotek'] + $tunjRujukan + $uangMakan + $kehadiranVal + $tugasluarval + $lemburVal;
+        $bpjs = ($jumlah > 4000000) ? 40000 : 30000;
+        $zis = round($jumlah * 0.025);
+        $infaqPdm = round($jumlah * 0.01);
+        $potongan = $zis + $bpjs + $infaqPdm + $row['koperasi'];
+        $grandtotal = $jumlah - $potongan;
+
+        $sheet->fromArray([
+            $row['pegawai_nama'], $row['gajipokok'], $row['tunjstruktural'], $row['tunjfungsional'],
+            $row['tunjkeluarga'], $row['tunjapotek'], $row['jmlabsensi'], $row['jmlterlambat'],
+            $konversiLembur, $row['cuti'], $row['tugasluar'], $row['doubleshift'], $totalHariKerja,
+            $jmlrujukan, $tunjRujukan, $uangMakan, $kehadiranVal, $tugasluarval, $lemburVal,
+            $jumlah, $zis, $row['pph21'] ?? 0, $row['qurban'] ?? 0, $row['potransport'] ?? 0,
+            $infaqPdm, $bpjs, $row['bpjstk'] ?? 0, $row['koperasi'], $potongan, $grandtotal
+        ], null, 'A' . $rowIndex);
+
+        $rowIndex++;
     }
 
-    if (!$rekap) {
-        return redirect()->to(base_url('admin/komponengaji'))->with('warning', 'Data tidak ditemukan.');
-    }
+    // Output as Excel file
+    $filename = 'Rekap_Gaji_' . $periode . '.xlsx';
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header("Content-Disposition: attachment;filename=\"$filename\"");
+    header('Cache-Control: max-age=0');
 
-    // Nomor HP dan nama dari data rekapan
-    $nama = $rekap['pegawai_nama'];
-    $nohp = '62' . ltrim($rekap['nohp'], '0');
-
-    // Generate file slip image (pastikan file slip sudah tersedia sebelumnya)
-    $filename = 'slip_' . $pin . '_' . $periode . '.png';
-    $imageUrl = base_url('slip/' . $filename);
-
-    // Kirim via API
-    $response = $this->sendSlipViaWablas($nohp, $nama, $periode);
-
-    // if (is_array($response) && isset($response['status']) && $response['status']) {
-    //     return redirect()->back()->with('success', 'Slip berhasil dikirim ke WhatsApp.');
-    // } else {
-    //     $msg = is_array($response) && isset($response['message']) ? $response['message'] : 'Unknown error';
-    //     return redirect()->back()->with('error', 'Gagal mengirim slip: ' . $msg);
-    // }
-    
+    $writer = new Xlsx($spreadsheet);
+    $writer->save('php://output');
+    exit;
 }
-
-private function sendSlipViaWablas($phone, $nama, $periode)
-{
-    $curl = curl_init();
-$token = "eCfIDYH9sNK4q8Z8HQNl3GL2n11pPTQrAPQfIOoP7S5otqERIoSOauf";
-$secret_key = "Jh8wMJAJ";
-$phone = $phone;
-$message = "Assalamualaikum {$nama},\nBerikut slip gaji Anda bulan {$periode}.";
-
-curl_setopt($curl, CURLOPT_URL, "https://tegal.wablas.com/api/send-message?token=$token.$secret_key&phone=$phone&message=$message");
-
-$result = curl_exec($curl);
-curl_close($curl);
-echo "<pre>";
-print_r($result);
-// echo "https://tegal.wablas.com/api/send-message?token=$token.$secret_key&phone=$phone&message=$message";
-
-}
-
-private function generateSlipImage($htmlContent, $outputPath)
-{
-    $tmpHtml = WRITEPATH . 'temp_slip.html';
-    file_put_contents($tmpHtml, $htmlContent);
-
-    $command = "wkhtmltoimage --width 800 {$tmpHtml} {$outputPath}";
-    exec($command);
-
-    return $outputPath;
-}
-
 
 }

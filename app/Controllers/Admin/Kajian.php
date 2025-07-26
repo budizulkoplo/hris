@@ -143,7 +143,7 @@ public function qrcode($idkajian)
     $barcodeuniq = $idkajian . $current_date . $next_number;
 
 
-    $qr_link = base_url("admin/kajian/kehadiran/{$idkajian}/{$barcodeuniq}");
+    $qr_link = base_url("https://mobile.rspkuboja.com/kehadiran/{$idkajian}/{$barcodeuniq}");
 
     $data = [
         'title'   => 'QR Code Kehadiran Kajian',

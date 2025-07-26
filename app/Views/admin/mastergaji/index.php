@@ -29,11 +29,9 @@
                     <!-- <td><?= esc($p['bagian']) ?></td> -->
                     <td class="text-center"><?= $verif ?></td>
                     <td class="text-center">
-                        <?php if ($p['idgaji']): ?>
-                            <a href="<?= base_url('admin/mastergaji/edit/' . $p['idgaji']) ?>" class="btn btn-sm btn-primary"><i class="fa fa-calculator"></i> Edit Gaji</a>
-                        <?php else: ?>
-                            <a href="<?= base_url('admin/mastergaji/input/' . $p['pegawai_pin']) ?>" class="btn btn-sm btn-success"><i class="fa fa-calculator"></i> Input Gaji</a>
-                        <?php endif; ?>
+                        <a href="<?= base_url('admin/mastergaji/listgaji/' . $p['pegawai_pin']) ?>" class="btn btn-info btn-sm">
+                            <i class="fa fa-calculator"></i> Lihat Riwayat Gaji
+                        </a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -44,7 +42,7 @@
 <script>
     $(document).ready(function() {
         $('#tabel').DataTable({
-            pageLength: 50
+            pageLength: 150
         });
     });
 </script>

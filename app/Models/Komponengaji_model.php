@@ -31,6 +31,7 @@ class Komponengaji_model extends Model
             penggajian.cuti,
             penggajian.tugasluar,
             penggajian.totalharikerja,
+            penggajian.doubleshift,
             (select rujukan from nominaldasar limit 1) as rujukan,
             (select uangmakan from nominaldasar limit 1) as uangmakan,
             (select koperasi from nominaldasar limit 1) as koperasi
@@ -38,7 +39,9 @@ class Komponengaji_model extends Model
         ->join('pegawai', 'penggajian.pegawai_pin = pegawai.pegawai_pin')
         ->join('mastergaji', 'mastergaji.pegawai_pin = pegawai.pegawai_pin AND mastergaji.verifikasi = "1"', 'left')
         ->where('penggajian.periode', $periode)
+        ->where("DATE_FORMAT(mastergaji.tglaktif, '%Y-%m') <=", $periode)
         ->findAll();
 }
+
 
 }

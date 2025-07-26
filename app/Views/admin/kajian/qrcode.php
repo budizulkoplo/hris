@@ -16,7 +16,7 @@
 <body>
 
     <h2><?= esc($kajian['namakajian']) ?></h2>
-    <p><strong>Tanggal:</strong> <?= date('d/m/Y', strtotime($kajian['tanggal'])) ?></p>
+    <p><strong>Tanggal:</strong> <?= date('d/m/Y', strtotime(!empty($kajian['tanggal']) ? $kajian['tanggal'] : date('Y-m-d'))) ?></p>
     <p><strong>Lokasi:</strong> <?= esc($kajian['lokasi']) ?></p>
 
     <div id="qrcode" align="center"></div>

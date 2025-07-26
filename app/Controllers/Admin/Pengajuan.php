@@ -29,23 +29,33 @@ class Pengajuan extends BaseController
 {
     checklogin();
 
-    $m_cuti = new Cuti_model();
+    $m_cuti    = new Cuti_model();
     $m_pegawai = new Pegawai_model();
+    $db        = \Config\Database::connect();
 
-    // Ambil daftar cuti pegawai jika pegawai_pin tersedia
     $daftar_cuti = [];
-    $sisa_cuti = 12; // Default sisa cuti per tahun
+    $sisa_cuti   = 12; // Default jatah cuti per tahun
+    $tahun_sekarang = date('Y');
 
     if (!empty($pegawai_pin)) {
-        // Ambil daftar cuti dalam tahun berjalan
-        $tahun_sekarang = date('Y');
+        // Ambil semua cuti (termasuk cuti melahirkan) untuk ditampilkan
         $daftar_cuti = $m_cuti->where('pegawai_pin', $pegawai_pin)
-            ->where('YEAR(tgl_mulai)', $tahun_sekarang)
-            ->orderBy('tgl_mulai', 'DESC')
-            ->findAll();
+                              ->where('YEAR(tgl_mulai)', $tahun_sekarang)
+                              ->orderBy('tgl_mulai', 'DESC')
+                              ->findAll();
 
-        // Hitung sisa cuti
-        $cuti_diambil = array_sum(array_column($daftar_cuti, 'jml_hari'));
+        // Ambil idcuti yang merupakan cuti melahirkan
+        $excluded = $db->query("SELECT idcuti FROM cutihdr WHERE jeniscuti = 'Cuti Melahirkan'")->getResultArray();
+        $excluded_ids = array_column($excluded, 'idcuti');
+
+        // Hitung total cuti yang mengurangi jatah (exclude Cuti Melahirkan)
+        $cuti_diambil = 0;
+        foreach ($daftar_cuti as $cuti) {
+            if (!in_array($cuti['idcuti'], $excluded_ids)) {
+                $cuti_diambil += (int)$cuti['jml_hari'];
+            }
+        }
+
         $sisa_cuti = max(0, 12 - $cuti_diambil);
     }
 
@@ -54,8 +64,8 @@ class Pengajuan extends BaseController
         'pegawai'          => $m_pegawai->findAll(),
         'selected_pegawai' => $pegawai_pin,
         'idkaru'           => $idkaru,
-        'daftar_cuti'      => $daftar_cuti, 
-        'sisa_cuti'        => $sisa_cuti, 
+        'daftar_cuti'      => $daftar_cuti,   // semua cuti ditampilkan
+        'sisa_cuti'        => $sisa_cuti,     // hanya yang dihitung selain cuti melahirkan
         'content'          => 'admin/pengajuan/cuti',
     ];
 
@@ -229,8 +239,6 @@ public function simpancuti()
 
     return redirect()->back()->with('sukses', 'Cuti berhasil dibatalkan.');
 }
-
-
 
     public function izin($pegawai_pin)
     {
@@ -499,6 +507,8 @@ public function simpancuti()
         $pegawai_pin   = $this->request->getPost('pegawai_pin');
         $tanggal_tugas = $this->request->getPost('tanggal_tugas');
         $alasan        = $this->request->getPost('alasan');
+        $lokasi        = $this->request->getPost('lokasi');
+        $waktu        = $this->request->getPost('waktu');
 
         // Konversi format tanggal dari MM/DD/YYYY ke Y-m-d
         $tanggal_obj = DateTime::createFromFormat('m/d/Y', $tanggal_tugas);
@@ -513,6 +523,8 @@ public function simpancuti()
             'pegawai_pin'  => $pegawai_pin,
             'tgltugasluar' => $tanggal_tugas,
             'alasan'       => $alasan,
+            'lokasi'       => $lokasi,
+            'waktu'        => $waktu,
             'created_at'   => date('Y-m-d H:i:s'),
         ];
 
@@ -526,17 +538,57 @@ public function simpancuti()
 }
 
 
-    public function cetak_tugasluar($idtugasluar)
-    {
-        checklogin();
-        $m_tugasluar = new Tugasluar_model();
-        $tugasluar = $m_tugasluar->find($idtugasluar);
-        if (!$tugasluar) {
-            return redirect()->back()->with('error', 'Data tugas luar tidak ditemukan.');
-        }
-        $data = ['title' => 'Surat Tugas Luar Pegawai', 'tugasluar' => $tugasluar];
-        return view('admin/pengajuan/cetak_tugasluar', $data);
+public function cetak_tugasluar($idtugasluar)
+{
+    $m_pegawai   = new Pegawai_model();
+    $m_tugasluar = new Tugasluar_model();
+
+    // Ambil data tugas luar
+    $tugasluar = $m_tugasluar->find($idtugasluar);
+
+    if (!$tugasluar) {
+        throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Data tugas luar tidak ditemukan.");
     }
+
+    // Ambil data pegawai
+    $pegawai = $m_pegawai->where('pegawai_pin', $tugasluar['pegawai_pin'])->first();
+
+    // Ambil data direktur
+    $direktur = $m_pegawai->where('jabatan', 'Direktur')->first();
+
+    // Generate nomor surat otomatis
+    $romawi = [
+        1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV',
+        5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII',
+        9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+    ];
+
+    $bulan = (int)date('m', strtotime($tugasluar['tgltugasluar']));
+    $tahun = date('Y', strtotime($tugasluar['tgltugasluar']));
+
+    // Ambil nomor urut surat dari database (misalnya berdasarkan tahun)
+    $db = \Config\Database::connect();
+    $builder = $db->table('tugasluar');
+    $builder->selectCount('id');
+    $builder->where('YEAR(tgltugasluar)', $tahun);
+    $count = $builder->countAllResults();
+
+    $nourut = str_pad($count, 3, '0', STR_PAD_LEFT); // misal: 001
+
+    $no_surat = $nourut . '/TGS/IV.6.AU/D/' . $romawi[$bulan] . '/' . $tahun;
+
+    $data = [
+        'logo'       => base_url('assets/upload/image/logopku.png'),
+        'pegawai'    => $pegawai,
+        'direktur'   => $direktur,
+        'tugasluar'  => $tugasluar,
+        'no_surat'   => $no_surat
+    ];
+
+    return view('admin/pengajuan/cetak_tugasluar', $data);
+}
+
+
 
     public function bataltugasluar($idtugasluar)
     {
@@ -552,28 +604,39 @@ public function simpancuti()
     public function rujukan($pegawai_pin = null)
 {
     checklogin(); // pastikan user sudah login
-    $m_rujukan = new \App\Models\Rujukan_model(); // Model Rujukan
-    $m_pegawai = new \App\Models\Pegawai_model(); // Model Pegawai (jika perlu)
+    $m_rujukan = new \App\Models\Rujukan_model(); 
+    $m_pegawai = new \App\Models\Pegawai_model(); 
 
     // Proses simpan data rujukan via POST
     if ($this->request->getMethod() === 'post' && $this->validate([
-        'pegawai_pin' => 'required',
-        'tanggal'     => 'required',
-        'keterangan'  => 'required',
+        'pegawai_pin'  => 'required',
+        'namapasien'   => 'required',
+        'tanggal'      => 'required',
+        'keterangan'   => 'required',
     ])) {
+        // Konversi tanggal ke format Y-m-d
+        $tglrujukan = $this->request->getPost('tanggal');
+        $tgl_obj = DateTime::createFromFormat('m/d/Y', $tglrujukan);
+        if ($tgl_obj) {
+            $tglrujukan = $tgl_obj->format('Y-m-d');
+        } else {
+            session()->setFlashdata('error', 'Format tanggal tidak valid.');
+            return redirect()->back()->withInput();
+        }
+
         $data = [
             'pegawai_pin' => $this->request->getPost('pegawai_pin'),
-            'tglrujukan'  => $this->request->getPost('tanggal'),
+            'namapasien'  => $this->request->getPost('namapasien'),
+            'tglrujukan'  => $tglrujukan,
             'keterangan'  => $this->request->getPost('keterangan'),
             'created_at'  => date('Y-m-d H:i:s'),
         ];
 
         $m_rujukan->insert($data);
         session()->setFlashdata('sukses', 'Rujukan berhasil disimpan.');
-        return redirect()->to(base_url('admin/pengajuan/rujukan'));
+        return redirect()->to(base_url("admin/pengajuan/rujukan/" . $data['pegawai_pin']));
     }
 
-    // Ambil daftar rujukan dalam tahun berjalan
     $daftar_rujukan = [];
     if (!empty($pegawai_pin)) {
         $tahun_sekarang = date('Y');
@@ -586,10 +649,73 @@ public function simpancuti()
     $data = [
         'title'           => 'Pengajuan Rujukan',
         'pegawai_pin'     => $pegawai_pin,
+        'pegawai'          => $m_pegawai->findAll(),
+        'selected_pegawai' => $pegawai_pin,
         'daftar_rujukan'  => $daftar_rujukan,
+        'content'         => 'admin/pengajuan/rujukan', // sesuaikan jika ada wrapper layout
     ];
 
-    return view('admin/pengajuan/rujukan', $data);
+    echo view('admin/layout/wrapper', $data);
+}
+
+public function simpanrujukan()
+{
+    checklogin();
+
+    $m_rujukan = new \App\Models\Rujukan_model();
+
+    if ($this->request->getMethod() === 'post' && $this->validate([
+        'pegawai_pin'  => 'required',
+        'namapasien'   => 'required',
+        'tanggal'      => 'required',
+        'keterangan'   => 'required',
+    ])) {
+        // Konversi tanggal ke Y-m-d
+        $tgl_input = $this->request->getPost('tanggal');
+        $tgl_obj = DateTime::createFromFormat('m/d/Y', $tgl_input);
+        if (!$tgl_obj) {
+            session()->setFlashdata('error', 'Format tanggal tidak valid (MM/DD/YYYY).');
+            return redirect()->back()->withInput();
+        }
+        $tglrujukan = $tgl_obj->format('Y-m-d');
+
+        $data = [
+            'pegawai_pin' => $this->request->getPost('pegawai_pin'),
+            'namapasien'  => $this->request->getPost('namapasien'),
+            'tglrujukan'  => $tglrujukan,
+            'keterangan'  => $this->request->getPost('keterangan'),
+            'created_at'  => date('Y-m-d H:i:s'),
+        ];
+
+        if ($m_rujukan->insert($data)) {
+            session()->setFlashdata('sukses', 'Rujukan berhasil disimpan.');
+        } else {
+            session()->setFlashdata('error', 'Gagal menyimpan rujukan.');
+        }
+
+        return redirect()->to(base_url("admin/pengajuan/rujukan/" . $data['pegawai_pin']));
+    }
+
+    session()->setFlashdata('error', 'Data tidak valid. Periksa kembali input Anda.');
+    return redirect()->back()->withInput();
+}
+
+public function batalRujukan($idrujukan = null)
+{
+    checklogin();
+
+    $m_rujukan = new \App\Models\Rujukan_model();
+    $rujukan = $m_rujukan->find($idrujukan);
+
+    if (!$rujukan) {
+        return redirect()->back()->with('error', 'Data rujukan tidak ditemukan.');
+    }
+
+    if ($m_rujukan->delete($idrujukan)) {
+        return redirect()->back()->with('sukses', 'Rujukan berhasil dibatalkan.');
+    } else {
+        return redirect()->back()->with('error', 'Gagal membatalkan rujukan.');
+    }
 }
 
 

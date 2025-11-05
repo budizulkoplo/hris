@@ -9,6 +9,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class Absensi extends BaseController
 {
@@ -125,6 +126,79 @@ class Absensi extends BaseController
     $writer->save('php://output');
     exit();
 }
+
+public function importExcel()
+    {
+        checklogin();
+
+        // Validasi file upload
+        $file = $this->request->getFile('file_excel');
+        if (!$file->isValid()) {
+            return redirect()->to(base_url('admin/absensi'))
+                ->with('error', 'File tidak valid.');
+        }
+
+        // Pastikan hanya format excel yang diterima
+        $ext = $file->getClientExtension();
+        if (!in_array($ext, ['xls', 'xlsx'])) {
+            return redirect()->to(base_url('admin/absensi'))
+                ->with('error', 'File harus berformat .xls atau .xlsx');
+        }
+
+        // Load file excel
+        $spreadsheet = IOFactory::load($file->getTempName());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray(null, true, true, true);
+
+        $db = \Config\Database::connect();
+        $builder = $db->table('att_log');
+
+        $dataInsert = [];
+        $firstRow = true;
+        foreach ($rows as $row) {
+            // Lewati header (baris pertama)
+            if ($firstRow) {
+                $firstRow = false;
+                continue;
+            }
+
+            // Pastikan kolom sesuai dengan urutan di excel
+            $sn         = $row['A'] ?? null;
+            $scan_date  = $row['B'] ?? null;
+            $pin        = $row['C'] ?? null;
+            $verifymode = $row['D'] ?? null;
+            $inoutmode  = $row['E'] ?? null;
+            $reserved   = $row['F'] ?? null;
+            $work_code  = $row['G'] ?? null;
+            $att_id     = $row['H'] ?? null;
+
+            if (empty($sn) || empty($scan_date)) {
+                continue; // skip baris kosong
+            }
+
+            $dataInsert[] = [
+                'sn'         => $sn,
+                'scan_date'  => $scan_date,
+                'pin'        => $pin,
+                'verifymode' => $verifymode,
+                'inoutmode'  => $inoutmode,
+                'reserved'   => $reserved,
+                'work_code'  => $work_code,
+                'att_id'     => $att_id
+            ];
+        }
+
+        if (!empty($dataInsert)) {
+            $builder->insertBatch($dataInsert);
+            return redirect()->to(base_url('admin/absensi'))
+                ->with('success', count($dataInsert) . ' data absensi berhasil diimport.');
+        } else {
+            return redirect()->to(base_url('admin/absensi'))
+                ->with('error', 'Tidak ada data yang diimport.');
+        }
+
+        $query = $db->query("CALL spRptRekapAbsensi(" . $db->escape($tanggalAwal) . ", " . $db->escape($tanggalAkhir) . ")");
+    }
 
 
 }

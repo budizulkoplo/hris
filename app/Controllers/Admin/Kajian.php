@@ -115,7 +115,6 @@ public function qrcode($idkajian)
 {
     checklogin();
 
-    // Ambil data kajian
     $m_kajian = new Kajian_model();
     $kajian = $m_kajian->find($idkajian);
 
@@ -128,32 +127,38 @@ public function qrcode($idkajian)
 
     $current_date = date('Ymd'); // Format YYYYMMDD
 
+    // === Device ID otomatis dari IP + User Agent ===
+    $rawDevice = $this->request->getIPAddress() . $this->request->getUserAgent()->getAgentString();
+    $device_id = strtoupper(substr(md5($rawDevice), 0, 3)); // 3 karakter unik
+
     $last_scan = $builder
         ->select('barcodeuniq')
-        ->like('barcodeuniq', $idkajian.$current_date, 'after') // LIKE 'YYYYMMDD%'
+        ->like('barcodeuniq', $device_id . $idkajian . $current_date, 'after')
         ->where('idkajian', $idkajian)
         ->orderBy('barcodeuniq', 'DESC')
         ->limit(1)
         ->get()
         ->getRow();
 
-    $last_number = $last_scan ? (int) substr($last_scan->barcodeuniq, 9) : 0;
-    $next_number = str_pad($last_number + 1, 4, '0', STR_PAD_LEFT); // 0001, 0002, dst
+    $prefixLength = strlen($device_id . $idkajian . $current_date); 
+    $last_number  = $last_scan ? (int) substr($last_scan->barcodeuniq, $prefixLength) : 0;
 
-    $barcodeuniq = $idkajian . $current_date . $next_number;
+    $next_number  = str_pad($last_number + 1, 4, '0', STR_PAD_LEFT);
 
+    $barcodeuniq  = $device_id . $idkajian . $current_date . $next_number;
 
     $qr_link = base_url("https://mobile.rspkuboja.com/kehadiran/{$idkajian}/{$barcodeuniq}");
 
     $data = [
         'title'   => 'QR Code Kehadiran Kajian',
         'kajian'  => $kajian,
-        'barcode'  => $barcodeuniq,
+        'barcode' => $barcodeuniq,
         'qr_link' => $qr_link,
     ];
 
     return view('admin/kajian/qrcode', $data);
 }
+
 
     public function kehadiran($idkajian = null, $barcode = null)
 {

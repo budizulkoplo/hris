@@ -25,6 +25,7 @@
                 <th>Tunj. Keluarga</th>
                 <th>Tunj. Apotek</th>
                 <th>Kehadiran</th>
+                <th>Lembur Khusus</th>
                 <th>Verifikasi</th>
                 <th>Aksi</th>
             </tr>
@@ -41,6 +42,7 @@
                         <td class="text-end"><?= number_format($item['tunjkeluarga']) ?></td>
                         <td class="text-end"><?= number_format($item['tunjapotek']) ?></td>
                         <td class="text-end"><?= number_format($item['kehadiran']) ?></td>
+                        <td class="text-end"><?= number_format($item['lemburkhusus']) ?></td>
                         <td>
                             <?= $item['verifikasi'] == 1 ? '<span class="badge bg-success">Ya</span>' : '<span class="badge bg-secondary">Tidak</span>' ?>
                         </td>

@@ -1,16 +1,18 @@
 <style>
 @media print {
     @page {
-        size: 80mm auto; /* Lebar 8cm, tinggi menyesuaikan isi */
+        size: 40mm auto; /* Lebar 8cm, tinggi menyesuaikan isi */
         margin: 5mm;     /* Margin tipis */
     }
 
     body {
-        width: 80mm;
-        font-family: Arial, sans-serif;
-        font-size: 10px; /* Font kecil dan rapi */
-        line-height: 1.2;
-    }
+            font-family: sans-serif;
+            font-size: 11px;
+            width: 100%;
+            max-width: 7.5cm;
+            margin: auto;
+            padding: 5px;
+        }
 
     .header img {
         width: 40px;
@@ -70,7 +72,7 @@
 <?php
     $bpjs = ($totalPenghasilan > 4000000) ? 40000 : 30000;
     $zis = round($totalPenghasilan * 0.025);
-    $infaqPdm = round($totalPenghasilan * 0.01);
+    $infaqPdm = round($rekap['gajipokok'] * 0.01);
     $totalPotongan = $zis + ($rekap['pph21'] ?? 0) + ($rekap['qurban'] ?? 0) +
                      ($rekap['potransport'] ?? 0) + $infaqPdm + $bpjs +
                      ($rekap['bpjstk'] ?? 0) + ($rekap['koperasi'] ?? 0);
@@ -92,7 +94,7 @@
         .text-end { text-align: right; }
     </style>
 </head>
-    <body onload="window.print()">
+    <body>
     <div class="header" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
         <img src="<?= base_url('../../../assets/upload/image/'.$site['icon']) ?>" alt="<?= $site['namaweb'] ?>" style="width: 80px; height: 80px;">
         <div>
@@ -175,7 +177,7 @@
                           ($rekap['jmlabsensi'] * $rekap['kehadiran']) + ($rekap['tugasluar'] * $rekap['kehadiran']) + ($rekap['konversilembur'] * $rekap['kehadiran']);
                 $bpjs = ($jumlah > 4000000) ? 40000 : 30000;
                 $zis = round($jumlah * 0.025);
-                $infaqPdm = round($jumlah * 0.01);
+                $infaqPdm = round($rekap['gajipokok'] * 0.01);
             ?>
             <tr><th>RINCIAN</th><th>BESARAN</th><th>JUMLAH</th></tr>
             <tr><td>ZIS</td><td align='center'>2.5%</td><td class="text-end">Rp <?= number_format($zis, 0, ',', '.') ?></td></tr>

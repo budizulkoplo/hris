@@ -10,7 +10,7 @@ class Mastergaji_model extends Model
     protected $primaryKey    = 'idgaji';
     protected $allowedFields = [
         'pegawai_pin', 'tglaktif', 'gajipokok', 'tunjstruktural', 'tunjkeluarga',
-        'tunjapotek', 'created_at', 'updated_at', 'verifikasi', 'jabatan', 'kehadiran','tunjfungsional'
+        'tunjapotek', 'created_at', 'updated_at', 'verifikasi', 'jabatan', 'kehadiran','lemburkhusus','tunjfungsional'
     ];
     protected $returnType    = 'array';
     protected $useTimestamps = true;

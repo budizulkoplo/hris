@@ -34,7 +34,6 @@ class Login extends BaseController
             $this->session->set('nama', $user['nama']);
             $this->session->setFlashdata('sukses', 'Hai ' . $user['nama'] . ', Anda berhasil login');
             $this->session->set('gambar', $user['foto']);  // Gunakan gambar/foto dari query
-            $this->session->set('idranting', $user['idranting']);
             // Cek apakah ada parameter redirect
             $redirectUrl = $this->request->getPost('redirect') ? $this->request->getPost('redirect') : base_url('admin/dasbor');
             return redirect()->to($redirectUrl); // Arahkan ke halaman yang diinginkan setelah login

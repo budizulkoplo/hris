@@ -28,12 +28,6 @@
 
 </style>
 
-<div id="print-header" class="d-none d-print-block text-center mb-4">
-    <h4 class="mb-0">Laporan Rekapan Absensi</h4>
-    <h5 class="mb-0">RS PKU Muhammadiyah Boja</h5>
-    <p class="mb-2">Periode: <?= date('d M Y', strtotime($tanggalAwal)) . ' s.d. ' . date('d M Y', strtotime($tanggalAkhir)) ?></p>
-</div>
-
 <!-- header laporan -->
 <div class="no-print">
 
@@ -83,14 +77,12 @@
             <th>Nama Pegawai</th>
             <th class="text-center">Jml Absensi</th>
             <th class="text-center">Total Terlambat</th>
-            <th class="text-center">Sisa Lembur</th>
-            <th class="text-center">Lembur Bulan Ini</th>
+            <th class="text-center">Lembur</th>
             <th class="text-center">Konversi Lembur</th>
             <th class="text-center">Double Shift</th>
             <th class="text-center">Cuti</th>
             <th class="text-center">Tugas Luar</th>
             <th class="text-center">Total Hari Kerja</th>
-            <th class="text-center">Sisa Lembur Bulan Ini</th> <!-- Kolom Sisa Lembur Bulan Ini -->
         </tr>
     </thead>
     <tbody>
@@ -102,9 +94,6 @@
                 <td class="text-center"><?= $pegawai['total_hari_kerja'] ?></td>
                 <td class="text-center <?= $pegawai['total_terlambat'] > 0 ? 'text-danger fw-bold' : '' ?>">
                     <?= $pegawai['total_terlambat_formatted'] ?>
-                </td>
-                <td class="text-center <?= $pegawai['total_lembur_lalu'] > 0 ? 'text-success fw-bold' : '' ?>">
-                    <?= $pegawai['sisa_lembur_bulan_lalu'] ?>
                 </td>
                 <td class="text-center <?= $pegawai['total_lembur'] > 0 ? 'text-success fw-bold' : '' ?>">
                     <?= $pegawai['real_lembur_bulan_ini'] ?>
@@ -118,9 +107,6 @@
                 <td class="text-center">
                     <?= $pegawai['total_hari_kerja'] + $pegawai['total_tugas_luar'] + $pegawai['doubleshift']+$pegawai['total_cuti'] + floor($pegawai['konversilembur']) ?>
                 </td>
-                <td class="text-center <?= $pegawai['sisa_lembur_bulan_ini'] > 0 ? 'text-success fw-bold' : '' ?>">
-                    <?= $pegawai['sisa_lembur_bulan_ini'] ?> Jam
-                </td> <!-- Kolom Sisa Lembur Bulan Ini -->
             </tr>
         <?php endforeach; ?>
     </tbody>

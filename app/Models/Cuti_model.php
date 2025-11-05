@@ -5,66 +5,81 @@ use CodeIgniter\Model;
 
 class Cuti_model extends Model
 {
-    // Untuk tabel cutihdr (header cuti)
+    // Tabel utama cuti header
     protected $table = 'cutihdr';
     protected $primaryKey = 'idcuti';
-    protected $allowedFields = ['pegawai_pin', 'tgl_mulai', 'tgl_selesai', 'jml_hari', 'alasancuti', 'jeniscuti', 'idpengganti', 'created_at'];
     protected $returnType = 'array';
 
-    // Untuk menghitung sisa cuti
+    // Field yang boleh diisi
+    protected $allowedFields = [
+        'pegawai_pin',
+        'tgl_mulai',
+        'tgl_selesai',
+        'jml_hari',
+        'alasancuti',
+        'jeniscuti',
+        'idpengganti',
+        'created_at'
+    ];
+
+    // Aktifkan otomatis timestamp (untuk created_at)
+    protected $useTimestamps = true;
+    protected $createdField  = 'created_at';
+    protected $updatedField  = ''; // tidak ada kolom updated_at
+
+    // Hitung sisa cuti per tahun
     public function getSisaCuti($pegawai_pin)
     {
         $tahunIni = date('Y');
-        $cutiTerpakai = $this->where('pegawai_pin', $pegawai_pin)
-                             ->where('YEAR(tgl_mulai)', $tahunIni)
-                             ->selectSum('jml_hari')
-                             ->first();
+
+        $cutiTerpakai = $this->selectSum('jml_hari')
+            ->where('pegawai_pin', $pegawai_pin)
+            ->where('YEAR(tgl_mulai)', $tahunIni)
+            ->first();
 
         return 12 - ($cutiTerpakai['jml_hari'] ?? 0);
     }
 
-    // Untuk mendapatkan daftar cuti tahun berjalan
+    // Ambil daftar cuti tahun berjalan
     public function getDaftarCutiTahunBerjalan($pegawai_pin, $tahun = null)
     {
-        if ($tahun === null) {
-            $tahun = date('Y');
-        }
+        $tahun = $tahun ?? date('Y');
 
         return $this->where('pegawai_pin', $pegawai_pin)
-                    ->where('YEAR(tgl_mulai)', $tahun)
-                    ->orderBy('tgl_mulai', 'DESC')
-                    ->findAll();
+            ->where('YEAR(tgl_mulai)', $tahun)
+            ->orderBy('tgl_mulai', 'DESC')
+            ->findAll();
     }
 
-    // Untuk mendapatkan detail harian cuti
+    // Ambil detail harian cuti (tabel cuti)
     public function getDetailHarian($idcuti)
     {
         return $this->db->table('cuti')
-                       ->where('idcuti', $idcuti)
-                       ->orderBy('tglcuti', 'ASC')
-                       ->get()
-                       ->getResultArray();
+            ->where('idcuti', $idcuti)
+            ->orderBy('tglcuti', 'ASC')
+            ->get()
+            ->getResultArray();
     }
 
-    // Untuk menyimpan data cuti (header dan detail)
+    // Simpan header cuti + detail harian
     public function simpanCuti($dataHeader, $dataDetail = [])
     {
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            // Simpan header cuti
+            // Insert header
             $this->insert($dataHeader);
-            $idcuti = $this->insertID();
+            $idcuti = $this->getInsertID(); // ambil ID yang baru
 
-            // Jika ada detail, simpan detail harian
+            // Insert detail jika ada
             if (!empty($dataDetail)) {
                 $detailData = [];
                 foreach ($dataDetail as $tanggal) {
                     $detailData[] = [
-                        'idcuti' => $idcuti,
+                        'idcuti'      => $idcuti,
                         'pegawai_pin' => $dataHeader['pegawai_pin'],
-                        'tglcuti' => $tanggal
+                        'tglcuti'     => $tanggal
                     ];
                 }
 

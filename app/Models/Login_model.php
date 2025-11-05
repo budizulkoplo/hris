@@ -16,7 +16,7 @@ class Login_model extends Model
         
         // Ambil data user berdasarkan username
         $builder = $db->table('v_login')
-            ->select('id, nama, username, password, foto, akses_level, idranting')
+            ->select('id, nama, username, password, foto, akses_level')
             ->where('username', $username)
             ->get();
         

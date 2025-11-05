@@ -228,8 +228,8 @@ $isDokter = stripos($pegawai['pegawai_nama'], 'dr') === 0;
                         <div class="ttd-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
                         <div>SDI</div>
                     <?php else: ?>
-                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
-                        <div>KARU</div>
+                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? '................................' ?>)</div>
+                        <div>KEPEGAWAIAN</div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -241,8 +241,8 @@ $isDokter = stripos($pegawai['pegawai_nama'], 'dr') === 0;
                     <div class="sdi-line">(dr. Arfa Bima Firizqina, MARS)</div>
                     <div>Direktur</div>
                 <?php else: ?>
-                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
-                    <div>SDI</div>
+                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? '................................' ?>)</div>
+                    <div>Direktur</div>
                 <?php endif; ?>
             </div>
         </div>
@@ -360,8 +360,8 @@ $isDokter = stripos($pegawai['pegawai_nama'], 'dr') === 0;
                         <div class="ttd-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
                         <div>SDI</div>
                     <?php else: ?>
-                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? 'Kepala Ruangan' ?>)</div>
-                        <div>KARU</div>
+                        <div class="ttd-line">(<?= $pegawai['namakaru'] ?? '................................' ?>)</div>
+                        <div>KEPEGAWAIAN</div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -373,9 +373,10 @@ $isDokter = stripos($pegawai['pegawai_nama'], 'dr') === 0;
                     <div class="sdi-line">(dr. Arfa Bima Firizqina, MARS)</div>
                     <div>Direktur</div>
                 <?php else: ?>
-                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? 'SDI' ?>)</div>
-                    <div>SDI</div>
+                    <div class="sdi-line">(<?= $sdi['pegawai_nama'] ?? '................................' ?>)</div>
+                    <div>Direktur</div>
                 <?php endif; ?>
+            </div>
             </div>
         </div>
     </div>

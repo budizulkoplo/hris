@@ -79,25 +79,18 @@ function tgl_indo($tanggal) {
 <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
     <!-- Logo kiri -->
     <div class="logo-kiri">
-        <img src="<?= base_url('assets/upload/image/logopku.png') ?>" alt="Logo RS" style="width: 90px;">
+        <img src="<?= base_url('assets/upload/image/logo.png') ?>" alt="Logo RS" style="width: 90px;">
     </div>
 
     <!-- Teks tengah -->
     <div class="text-tengah" style="text-align: center; flex: 1;">
-        <h3 style="margin: 0; color: #006400;">RS PKU MUHAMMADIYAH BOJA</h3>
+        <h3 style="margin: 0;">PERUMDA AIR MINUM <br>TIRTO PANGURIPAN</h3>
         <p style="margin: 2px 0; font-size: 12px;">
-            Jalan Raya Boja Limbangan, Desa/Kelurahan Salamsari, Kecamatan Boja,<br>
-            Kabupaten Kendal, Provinsi Jawa Tengah, Kode Pos: 51381
+            Kendal
         </p>
-        <p style="margin: 2px 0; font-size: 12px;">
-            Telp. (0294)6103005 | Email: rspkumuhammadiyahboja@gmail.com
-        </p>
+
     </div>
 
-    <!-- Logo kanan -->
-    <div class="logo-kanan">
-        <img src="<?= base_url('assets/upload/image/paripurna.webp') ?>" alt="Logo Paripurna" style="width: 140px;">
-    </div>
 </div>
 <hr>
 
@@ -107,7 +100,7 @@ function tgl_indo($tanggal) {
 <p>Yang bertanda tangan di bawah ini:</p>
 <table>
     <tr><td><strong>Nama</strong></td><td>: <?= $direktur['pegawai_nama'] ?? '........'; ?></td></tr>
-    <tr><td><strong>Jabatan</strong></td><td>: Direktur RS PKU Muhammadiyah Boja</td></tr>
+    <tr><td><strong>Jabatan</strong></td><td>: Direktur</td></tr>
 </table>
 
 <p>Menugaskan kepada pegawai berikut:</p>
@@ -139,11 +132,11 @@ function tgl_indo($tanggal) {
 
 <div class="ttd">
     <div style="width:50%; float:right; text-align:center;">
-        Boja, <?= date('d F Y'); ?><br>
-        RS PKU Muhammadiyah Boja<br>
+        Kendal, <?= date('d F Y'); ?><br>
+        PDAM TIRTO PANGSURIPAN<br>
         Direktur,<br><br><br><br>
         <strong><?= $direktur['pegawai_nama'] ?? '........'; ?></strong><br>
-        NBM: <?= $direktur['nbm'] ?? '........'; ?>
+        NIP: <?= $direktur['nip'] ?? '........'; ?>
     </div>
 </div>
 

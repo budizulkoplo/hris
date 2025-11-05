@@ -10,6 +10,7 @@ class Mastergaji extends BaseController
     public function index()
 {
     checklogin();
+    $cek = $this->checkAkses(); if ($cek) return $cek;
 
     $m_mastergaji = new Mastergaji_model();
 
@@ -81,6 +82,7 @@ public function save()
     $tunjkeluarga = $this->request->getPost('tunjkeluarga');
     $tunjapotek = $this->request->getPost('tunjapotek');
     $kehadiran = $this->request->getPost('kehadiran');
+    $lemburkhusus = $this->request->getPost('lemburkhusus');
     $verifikasi = $this->request->getPost('verifikasi') ?? '0'; // Default '0' jika tidak dipilih
 
     // Validasi input (misalnya pastikan semua field ada isinya)
@@ -98,6 +100,7 @@ public function save()
         'tunjkeluarga'    => $tunjkeluarga,
         'tunjapotek'      => $tunjapotek,
         'kehadiran'       => $kehadiran,
+        'lemburkhusus'    => $lemburkhusus,
         'verifikasi'      => $verifikasi,
         'created_at'      => date('Y-m-d H:i:s'),
         'updated_at'      => date('Y-m-d H:i:s'),
@@ -121,13 +124,14 @@ public function update($idgaji)
     $tunjkeluarga = $this->request->getPost('tunjkeluarga');
     $tunjapotek = $this->request->getPost('tunjapotek');
     $kehadiran = $this->request->getPost('kehadiran');
+    $lemburkhusus = $this->request->getPost('lemburkhusus');
     $tglaktif = $this->request->getPost('tglaktif');
     $verifikasi = $this->request->getPost('verifikasi') ?? '0'; // Default '0' jika tidak dipilih
 
     // Validasi input (misalnya pastikan semua field ada isinya)
-    if (!$gajipokok) {
-        return redirect()->back()->with('gagal', 'gaji pokok harus diisi.');
-    }
+    // if (!$gajipokok) {
+    //     return redirect()->back()->with('gagal', 'gaji pokok harus diisi.');
+    // }
 
     // Siapkan data untuk diperbarui di tabel mastergaji
     $data = [
@@ -138,6 +142,7 @@ public function update($idgaji)
         'tunjkeluarga'    => $tunjkeluarga,
         'tunjapotek'      => $tunjapotek,
         'kehadiran'       => $kehadiran,
+        'lemburkhusus'    => $lemburkhusus,
         'verifikasi'      => $verifikasi,
         'updated_at'      => date('Y-m-d H:i:s'),
     ];
@@ -193,5 +198,13 @@ public function hapus($idgaji)
     return redirect()->to('/admin/mastergaji/listgaji/' . $gaji['pegawai_pin'])->with('sukses', 'Data gaji berhasil dihapus.');
 }
 
+    private function checkAkses()
+{
+    $level = session()->get('akses_level'); // atau $this->session->get() jika pakai di konstruktor
+
+    if (!in_array($level, ['superadmin','it', 'direktur','sdi'])) {
+        return redirect()->to('/admin/dasbor')->with('gagal', 'Anda tidak memiliki akses ke menu ini.');
+    }
+}
 
 }

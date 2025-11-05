@@ -43,6 +43,11 @@
     </div>
 
     <div class="mb-3">
+        <label>nilai Lembur Khusus *hanya diisi jika nilai lembur beda dengan kehadiran</label>
+        <input type="number" name="lemburkhusus" class="form-control">
+    </div>
+
+    <div class="mb-3">
         <label>Verifikasi</label>
         <select name="verifikasi" class="form-control">
             <option value="0">Belum Terverifikasi</option>

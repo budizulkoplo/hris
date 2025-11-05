@@ -7,20 +7,12 @@
 <form action="<?= base_url('admin/nominaldasar/update') ?>" method="post">
     <?= csrf_field() ?>
     <div class="form-group mb-2">
-        <label>Rujukan</label>
-        <input type="number" name="rujukan" value="<?= esc($nominal['rujukan']) ?>" class="form-control" required>
-    </div>
-    <div class="form-group mb-2">
         <label>Uang Makan</label>
         <input type="number" name="uangmakan" value="<?= esc($nominal['uangmakan']) ?>" class="form-control" required>
     </div>
     <div class="form-group mb-2">
-        <label>BPJS</label>
+        <label>BPJS TK</label>
         <input type="number" name="bpjs" value="<?= esc($nominal['bpjs']) ?>" class="form-control">
-    </div>
-    <div class="form-group mb-3">
-        <label>Koperasi</label>
-        <input type="number" name="koperasi" value="<?= esc($nominal['koperasi']) ?>" class="form-control">
     </div>
 
     <button type="submit" class="btn btn-success">

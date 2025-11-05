@@ -67,7 +67,7 @@
     
 
     <div class="table-responsive">
-        <table id="tabel" class="table table-bordered">
+        <table class="table table-bordered" id="example1">
             <thead>
                 <tr>
                     <th>No</th>
@@ -147,7 +147,7 @@
 
 <!-- Tabel -->
 <div class="table-responsive">
-    <table id="tabel" class="table table-bordered table-striped">
+    <table class="table table-bordered" id="example1">
         <thead>
             <tr>
                 <th>No</th>

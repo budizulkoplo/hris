@@ -49,6 +49,10 @@
         <label for="tunjapotek">per Kehadiran</label>
         <input type="number" name="kehadiran" class="form-control" value="<?= esc($gaji['kehadiran']) ?>" step="0.01">
     </div>
+    <div class="form-group">
+        <label>nilai Lembur Khusus *hanya diisi jika nilai lembur beda dengan kehadiran</label>
+        <input type="number" name="lemburkhusus" class="form-control" value="<?= esc($gaji['lemburkhusus']) ?>" step="0.01">
+    </div>
 
     <div class="form-group">
         <label for="verifikasi">Verifikasi</label>

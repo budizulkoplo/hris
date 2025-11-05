@@ -24,7 +24,7 @@ $username=$session->get('nama');
       <!-- Sidebar user panel (optional) -->
       <div class="user-panel mt-3 pb-3 mb-3 d-flex">
         <div class="image">
-          <img src="<?php if($session->get('gambar')=="") { echo base_url('/assets/admin/dist/img/user.png'); }else{ echo base_url('assets/upload/image/'.$session->get('gambar')); } ?>" class="img-circle elevation-2" alt="User Image">
+          <img src="<?php echo base_url('public/user.png'); ?>" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
           <a href="<?php echo base_url('admin/akun') ?>" class="d-block"><?php echo $session->get('nama') ?></a>

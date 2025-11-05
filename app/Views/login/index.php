@@ -18,126 +18,80 @@ $site         = $konfigurasi->listing();
   <link href="<?= base_url('assets/upload/image/'.$site['icon']) ?>" rel="icon" />
   <link href="<?= base_url('assets/upload/image/'.$site['icon']) ?>" rel="apple-touch-icon" />
 
-  <!-- Google Font: Source Sans Pro -->
-  <link
-    href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"
-    rel="stylesheet" />
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600&display=fallback" rel="stylesheet" />
   <!-- Font Awesome -->
-  <link
-    href="<?= base_url() ?>/assets/admin/plugins/fontawesome-free/css/all.min.css"
-    rel="stylesheet" />
-  <!-- icheck bootstrap -->
-  <link
-    href="<?= base_url() ?>/assets/admin/plugins/icheck-bootstrap/icheck-bootstrap.min.css"
-    rel="stylesheet" />
-  <!-- Theme style -->
-  <link
-    href="<?= base_url() ?>/assets/admin/dist/css/adminlte.min.css"
-    rel="stylesheet" />
+  <link href="<?= base_url() ?>/assets/admin/plugins/fontawesome-free/css/all.min.css" rel="stylesheet" />
+  <!-- Bootstrap + AdminLTE -->
+  <link href="<?= base_url() ?>/assets/admin/plugins/icheck-bootstrap/icheck-bootstrap.min.css" rel="stylesheet" />
+  <link href="<?= base_url() ?>/assets/admin/dist/css/adminlte.min.css" rel="stylesheet" />
 
   <!-- SWEETALERT -->
   <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
   <style>
     body {
-      background-image: url('public/uploads/back.webp');
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-position: center;
+      background: #07b8b2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       min-height: 100vh;
     }
 
     .login-box {
-      width: 90%;
-      max-width: 400px;
-      margin: 2rem auto;
-      min-width: auto !important;
-    }
-
-    @media (min-width: 768px) {
-      .login-box {
-        min-width: 35% !important;
-      }
+      width: 100%;
+      max-width: 360px;
+      margin: auto;
     }
 
     .login-card-body {
-      background-color: rgba(255, 255, 255, 0.85) !important;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      border-radius: 10px !important;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    }
-
-    .login-box .card {
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-
-    /* Logo dan Judul */
-    .login-logo .row {
-      align-items: center;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      padding: 2rem;
     }
 
     .login-logo img {
-      max-width: 100%;
-      height: auto;
+      max-width: 150px;
+      margin-bottom: 1rem;
     }
 
-    @media (max-width: 576px) {
-      .login-logo h1 {
-        font-size: 1.5rem;
-      }
-
-      .login-logo h5 {
-        font-size: 1rem;
-      }
-
-      .login-logo .col-12 {
-        margin-bottom: 1rem;
-      }
-
-      .icheck-primary input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-      }
-
-      .icheck-primary label {
-        font-size: 1rem;
-      }
+    .login-logo h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
     }
-    @media (max-width: 768px) {
-    body {
-      background-image: none !important;
-      background-color: #07b8b2;
-    }
-}
 
+    .login-logo h5 {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+
+    .btn-login {
+      width: 100%;
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 0.6rem;
+    }
   </style>
+
   <link rel="manifest" href="<?= base_url('manifest.json') ?>">
-  <meta name="theme-color" content="#007bff">
+  <meta name="theme-color" content="#07b8b2">
 </head>
 
 <body class="hold-transition login-page">
   <div class="login-box">
-    <!-- /.login-logo -->
     <div class="card">
       <div class="card-body login-card-body">
-        <div class="login-logo">
-          <div class="row">
-            <div class="col-12 col-md-3 text-center mb-3 mb-md-0">
-              <img
-                src="<?= base_url('assets/upload/image/'.$site['icon']) ?>"
-                alt="Logo <?= esc($site['singkatan']) ?>"
-                class="img-fluid" />
-            </div>
-            <div class="col-12 col-md-9 text-center text-md-left">
-              <h1><?= esc($site['singkatan']) ?> Login</h1>
-              <h5><?= esc($site['tagline']) ?></h5>
-            </div>
-          </div>
+        <div class="login-logo text-center">
+          <img src="<?= base_url('assets/upload/image/'.$site['icon']) ?>" alt="Logo <?= esc($site['singkatan']) ?>">
+          <h1>LOGIN</h1>
+          <h5><?= esc($site['tagline']) ?></h5>
         </div>
         <hr />
         <p class="login-box-msg">Masukkan username dan password</p>
+        
         <?php if(\Config\Services::validation()->getErrors()): ?>
         <div class="text-danger mb-3">
           <?= \Config\Services::validation()->listErrors() ?>
@@ -148,125 +102,49 @@ $site         = $konfigurasi->listing();
         <?= csrf_field() ?>
 
         <div class="input-group mb-3">
-          <input
-            type="text"
-            name="username"
-            class="form-control"
-            placeholder="Username"
-            autocomplete="off"
-            required />
+          <input type="text" name="username" class="form-control" placeholder="Username" autocomplete="off" required />
           <div class="input-group-append">
-            <div class="input-group-text">
-              <span class="fas fa-user"></span>
-            </div>
+            <div class="input-group-text"><span class="fas fa-user"></span></div>
           </div>
         </div>
 
         <div class="input-group mb-3">
-          <input
-            type="password"
-            name="password"
-            class="form-control"
-            placeholder="Password"
-            autocomplete="off"
-            required />
+          <input type="password" name="password" class="form-control" placeholder="Password" autocomplete="off" required />
           <div class="input-group-append">
-            <div class="input-group-text">
-              <span class="fas fa-lock"></span>
-            </div>
+            <div class="input-group-text"><span class="fas fa-lock"></span></div>
           </div>
         </div>
 
-        <input
-          type="hidden"
-          name="redirect"
-          value="<?= isset($_GET['redirect']) ? esc($_GET['redirect']) : '' ?>" />
+        <input type="hidden" name="redirect" value="<?= isset($_GET['redirect']) ? esc($_GET['redirect']) : '' ?>" />
 
-        <div class="row align-items-center">
-          <div class="col-8">
-            <div class="icheck-primary">
-              <input type="checkbox" id="remember" name="remember" />
-              <label for="remember">Remember Me</label>
-            </div>
-          </div>
-          <div class="col-4">
-            <button type="submit" class="btn btn-primary btn-block">
-              Sign In
-            </button>
-          </div>
-        </div>
+        <button type="submit" class="btn btn-primary btn-login">Sign In</button>
 
         <?= form_close() ?>
-        <hr />
       </div>
-      <!-- /.login-card-body -->
     </div>
   </div>
-  <!-- /.login-box -->
 
-  <!-- jQuery -->
+  <!-- jQuery & Bootstrap -->
   <script src="<?= base_url() ?>/assets/admin/plugins/jquery/jquery.min.js"></script>
-  <!-- Bootstrap 4 -->
   <script src="<?= base_url() ?>/assets/admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <!-- AdminLTE App -->
   <script src="<?= base_url() ?>/assets/admin/dist/js/adminlte.min.js"></script>
 
   <script>
     <?php if(session()->getFlashdata('sukses')): ?>
-    swal("Berhasil", "<?= session()->getFlashdata('sukses') ?>", "success");
+      swal("Berhasil", "<?= session()->getFlashdata('sukses') ?>", "success");
     <?php endif; ?>
 
     <?php if(isset($_GET['logout'])): ?>
-    swal("Berhasil", "Anda berhasil logout.", "success");
+      swal("Berhasil", "Anda berhasil logout.", "success");
     <?php endif; ?>
 
     <?php if(isset($_GET['login'])): ?>
-    swal("Oops...", "Anda belum login.", "warning");
+      swal("Oops...", "Anda belum login.", "warning");
     <?php endif; ?>
 
     <?php if(session()->getFlashdata('warning')): ?>
-    swal("Mohon maaf", "<?= session()->getFlashdata('warning') ?>", "warning");
+      swal("Mohon maaf", "<?= session()->getFlashdata('warning') ?>", "warning");
     <?php endif; ?>
   </script>
-
-  <script>
-  // Daftarkan service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('<?= base_url('service-worker.js') ?>')
-      .then(function () {
-        console.log('✅ Service Worker registered');
-      });
-  }
-
-  let deferredPrompt;
-
-  // Simpan event sebelum install prompt ditampilkan
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Mencegah prompt default
-    e.preventDefault();
-
-    // Simpan event agar bisa dipanggil nanti
-    deferredPrompt = e;
-
-    // Tampilkan prompt setelah delay 2 detik
-    setTimeout(() => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-
-        // Tanggapi pilihan user
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('✅ User accepted install prompt');
-          } else {
-            console.log('❌ User dismissed install prompt');
-          }
-          deferredPrompt = null;
-        });
-      }
-    }, 2000); // bisa sesuaikan delay
-  });
-</script>
-
 </body>
-
 </html>

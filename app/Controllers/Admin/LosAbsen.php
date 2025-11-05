@@ -28,7 +28,7 @@ class LosAbsen extends BaseController
         $tanggal_akhir = date('Y-m-t', strtotime($tanggal_awal)); // Akhir bulan sesuai bulanTahun
 
         // Koneksi DB absensi
-        $db = \Config\Database::connect('absensi');
+        $db = \Config\Database::connect('pdam');
 
         $absen_manual = $db->table('att_log')
             ->where('sn', '') // hanya manual
@@ -65,6 +65,36 @@ class LosAbsen extends BaseController
             return redirect()->to('/admin/losabsen')->with('gagal', 'Gagal menghapus data.');
         }
     }
+
+    public function deleteLog()
+{
+    checklogin();
+
+    $pin       = $this->request->getPost('pin');
+    $scan_date = $this->request->getPost('scan_date');
+
+    $db      = \Config\Database::connect('absensi');
+    $builder = $db->table('att_log');
+
+    // Hapus hanya data manual (sn kosong) sesuai pin & scan_date
+    $deleted = $builder
+        ->where('pin', $pin)
+        ->where('scan_date', $scan_date)
+        ->delete();
+
+    if ($deleted) {
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => "Log dengan PIN {$pin} dan Tanggal {$scan_date} berhasil dihapus"
+        ]);
+    } else {
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => "Gagal menghapus log PIN {$pin} pada Tanggal {$scan_date}"
+        ]);
+    }
+}
+
 
 
     public function simpan()

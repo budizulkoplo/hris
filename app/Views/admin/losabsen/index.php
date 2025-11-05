@@ -60,10 +60,11 @@
                             <th>Waktu</th>
                             <th>Status</th>
                             <th>Shift</th>
+                            <th>Check</th>
                         </tr>
                     </thead>
                     <tbody id="logAbsenBody">
-                        <tr><td colspan="4" class="text-center">Pilih pegawai & tanggal</td></tr>
+                        <tr><td colspan="5" class="text-center">Pilih pegawai & tanggal</td></tr>
                     </tbody>
                 </table>
                 <p>*ditampilkan log H+1 untuk menampilkan jika ada data shift malam</p>
@@ -147,42 +148,77 @@
     
 </script>
 <script>
-    $(document).ready(function () {
-        function loadLogAbsen() {
-            const pin = $('#pin').val();
-            const tanggal = $('#tanggal').val();
+$(document).ready(function () {
+    function loadLogAbsen() {
+        const pin = $('#pin').val();
+        const tanggal = $('#tanggal').val();
 
-            if (pin && tanggal) {
-                $('#logAbsenBody').html('<tr><td colspan="3" class="text-center">Loading...</td></tr>');
+        if (pin && tanggal) {
+            $('#logAbsenBody').html('<tr><td colspan="5" class="text-center">Loading...</td></tr>');
 
-                $.getJSON("<?= base_url('admin/losabsen/getLogAbsen') ?>", { pin, tanggal }, function (response) {
-                    if (response.success && response.data.length > 0) {
-                        let html = '';
-                        response.data.forEach((row, index) => {
-                            const rowClass = !row.sn ? 'table-danger' : '';
-                            html += `
-                                <tr class="${rowClass}">
-                                    <td>${index + 1}</td>
-                                    <td>${row.scan_date}</td>
-                                    <td>${row.statusabsen}</td>
-                                    <td>${row.shift}</td>
-                                </tr>`;
-                        });
+            $.getJSON("<?= base_url('admin/losabsen/getLogAbsen') ?>", { pin, tanggal }, function (response) {
+                if (response.success && response.data.length > 0) {
+                    let html = '';
+                    response.data.forEach((row, index) => {
+                        const rowClass = !row.sn ? 'table-danger' : '';
+                        let actionBtn = '';
 
-                        $('#logAbsenBody').html(html);
-                    } else {
-                        $('#logAbsenBody').html('<tr><td colspan="4" class="text-center">Tidak ada log absensi.</td></tr>');
-                    }
-                }).fail(function () {
-                    $('#logAbsenBody').html('<tr><td colspan="4" class="text-center text-danger">Gagal mengambil data.</td></tr>');
-                });
-            } else {
-                $('#logAbsenBody').html('<tr><td colspan="4" class="text-center">Pilih pegawai & tanggal</td></tr>');
-            }
+                        // Jika shift = '-' tampilkan tombol hapus
+                        if (row.shift === '-') {
+                            actionBtn = `
+                                <button class="btn btn-sm btn-danger btnHapusLog" 
+                                    data-pin="${row.pin}" 
+                                    data-scan_date="${row.scan_date}">
+                                    Hapus
+                                </button>`;
+                        }
+
+                        html += `
+                            <tr class="${rowClass}">
+                                <td>${index + 1}</td>
+                                <td>${row.scan_date}</td>
+                                <td>${row.statusabsen}</td>
+                                <td>${row.shift}</td>
+                                <td>${actionBtn}</td>
+                            </tr>`;
+                    });
+
+                    $('#logAbsenBody').html(html);
+
+                    // Event handler tombol hapus
+                    $('.btnHapusLog').on('click', function () {
+                        const pin = $(this).data('pin');
+                        const scan_date = $(this).data('scan_date');
+
+                        if (confirm(`Yakin hapus log?\nPIN: ${pin}\nTanggal: ${scan_date}`)) {
+                            $.post("<?= base_url('admin/losabsen/deleteLog') ?>", 
+                                { pin: pin, scan_date: scan_date }, 
+                                function (res) {
+                                    if (res.success) {
+                                        alert('Data berhasil dihapus');
+                                        loadLogAbsen(); // reload ulang
+                                    } else {
+                                        alert('Gagal hapus data');
+                                    }
+                                }, 
+                            'json');
+                        }
+                    });
+
+                } else {
+                    $('#logAbsenBody').html('<tr><td colspan="5" class="text-center">Tidak ada log absensi.</td></tr>');
+                }
+            }).fail(function () {
+                $('#logAbsenBody').html('<tr><td colspan="5" class="text-center text-danger">Gagal mengambil data.</td></tr>');
+            });
+        } else {
+            $('#logAbsenBody').html('<tr><td colspan="5" class="text-center">Pilih pegawai & tanggal</td></tr>');
         }
+    }
 
-        $('#pin, #tanggal').change(loadLogAbsen);
-    });
+    $('#pin, #tanggal').change(loadLogAbsen);
+});
 </script>
+
 
 

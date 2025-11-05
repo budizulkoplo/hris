@@ -6,7 +6,7 @@ use CodeIgniter\Model;
 
 class Konfigurasi_model extends Model
 {
-    protected $table         = 'konfigurasi';
+    protected $table         = 'konfigurasis';
     protected $primaryKey    = 'id_konfigurasi';
     protected $allowedFields = [];
 

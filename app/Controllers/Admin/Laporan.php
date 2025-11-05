@@ -738,6 +738,345 @@ public function lembur()
     return view('admin/layout/wrapper', $data);
 }
 
+public function rekapKajian()
+{
+    $periode  = $this->request->getVar('periode') ?? date('Y-m');
+    $rekap = [];
+
+    // ========== 1. Ambil data API Ahad Pagi ==========
+    $url = "https://kajian.pcmboja.com/api/kehadiran?periode={$periode}&dept=1";
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_HTTPHEADER => [
+            'X-API-KEY: pkuboja2025',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response !== false) {
+        $result = json_decode($response, true);
+        if (!empty($result['data'])) {
+            foreach ($result['data'] as $item) {
+                $nik  = $item['nik'] ?? null;
+                $nama = $item['nama_lengkap'] ?? null;
+
+                if (!$nik) continue; // skip kalau nik kosong
+
+                if (!isset($rekap[$nik])) {
+                    $rekap[$nik] = [
+                        'nik'            => $nik,
+                        'nama'           => $nama,
+                        'ahad_pagi'      => 0,
+                        'senin_pagi'     => 0,
+                        'kajian_bulanan' => 0,
+                        'total'          => 0
+                    ];
+                }
+
+                $rekap[$nik]['ahad_pagi']++;
+                $rekap[$nik]['total']++;
+            }
+        }
+    }
+
+    // ========== 2. Ambil data dari DB ==========
+    $dataKajian = $this->db->table('kehadiran_kajian p')
+    ->select('p.nik, a.pegawai_nama, k.namakajian, k.rutin')
+    ->join('pegawai a', 'a.nik = p.nik')
+    ->join('kajian k', 'k.idkajian = p.idkajian')
+    ->where("DATE_FORMAT(p.waktu_scan, '%Y-%m') =", $periode)
+    ->get()
+    ->getResultArray();
+
+
+    foreach ($dataKajian as $row) {
+        $nik  = $row['nik'];
+        $nama = $row['pegawai_nama'];
+
+        if (!isset($rekap[$nik])) {
+            $rekap[$nik] = [
+                'nik'            => $nik,
+                'nama'           => $nama,
+                'ahad_pagi'      => 0,
+                'senin_pagi'     => 0,
+                'kajian_bulanan' => 0,
+                'total'          => 0
+            ];
+        }
+
+        if ($row['rutin'] == '1') {
+            $rekap[$nik]['senin_pagi']++;
+        } else {
+            $rekap[$nik]['kajian_bulanan']++;
+        }
+
+        $rekap[$nik]['total']++;
+    }
+
+    // ========== 3. Kirim ke View ==========
+    uasort($rekap, function($a, $b) {
+        return strcmp($a['nama'], $b['nama']);
+    });
+
+    $data = [
+        'title'      => 'Rekap Kehadiran Kajian',
+        'periode'    => $periode,
+        'bulanTahun' => $periode,
+        'rekap'      => $rekap,
+        'content'    => 'admin/laporan/rekapkajian',
+    ];
+
+    return view('admin/layout/wrapper', $data);
+
+}
+
+public function kinerja()
+{
+    checklogin();
+    
+    $tahun = $this->request->getGet('tahun') ?? date('Y');
+    
+    // Debug: Log proses
+    log_message('debug', 'Memulai generate laporan kinerja tahun: ' . $tahun);
+    
+    $data = [
+        'title' => 'Laporan Kinerja Pegawai Tahun ' . $tahun,
+        'tahun' => $tahun,
+        'trendKeterlambatan' => $this->getTrendKeterlambatan($tahun),
+        'topKeterlambatan' => $this->getTopKeterlambatan($tahun),
+        'trendLembur' => $this->getTrendLembur($tahun),
+        'topLembur' => $this->getTopLembur($tahun),
+        
+        'content' => 'admin/laporan/kinerja',
+    ];
+
+    // Debug: Log hasil
+    log_message('debug', 'Trend Keterlambatan: ' . count($data['trendKeterlambatan']) . ' records');
+    log_message('debug', 'Top Keterlambatan: ' . count($data['topKeterlambatan']) . ' records');
+    log_message('debug', 'Trend Lembur: ' . count($data['trendLembur']) . ' records');
+    log_message('debug', 'Top Lembur: ' . count($data['topLembur']) . ' records');
+
+    return view('admin/layout/wrapper', $data);
+}
+
+private function getTrendKeterlambatan($tahun)
+{
+    try {
+        $db = \Config\Database::connect();
+        
+        // Query langsung dari tabel rekapabsensi yang sudah diisi SP
+        $query = $db->query("
+            SELECT 
+                MONTH(tgl) as bulan,
+                COUNT(DISTINCT pegawai_pin) as jumlah_pegawai,
+                SUM(TIMESTAMPDIFF(SECOND, 
+                    STR_TO_DATE(jam_masuk_shift, '%H:%i:%s'), 
+                    STR_TO_DATE(jam_masuk, '%H:%i:%s')
+                )) as total_detik_terlambat
+            FROM rekapabsensi 
+            WHERE YEAR(tgl) = ? 
+                AND jam_masuk > jam_masuk_shift
+                AND jam_masuk != ''
+                AND jam_masuk_shift != ''
+                AND (status_khusus = '' OR status_khusus IS NULL)
+            GROUP BY MONTH(tgl)
+            ORDER BY bulan
+        ", [$tahun]);
+        
+        $result = $query->getResultArray();
+        $trend = [];
+        
+        // Inisialisasi semua bulan
+        for ($i = 1; $i <= 12; $i++) {
+            $trend[$i] = [
+                'bulan' => $i,
+                'nama_bulan' => $this->getNamaBulan($i),
+                'jumlah_pegawai' => 0,
+                'total_detik_terlambat' => 0,
+                'rata_rata_terlambat' => '00:00:00'
+            ];
+        }
+        
+        // Isi data dari query
+        foreach ($result as $row) {
+            $bulan = (int)$row['bulan'];
+            $trend[$bulan]['jumlah_pegawai'] = (int)$row['jumlah_pegawai'];
+            $trend[$bulan]['total_detik_terlambat'] = (int)$row['total_detik_terlambat'];
+            
+            if ($row['jumlah_pegawai'] > 0 && $row['total_detik_terlambat'] > 0) {
+                $rataDetik = $row['total_detik_terlambat'] / $row['jumlah_pegawai'];
+                $trend[$bulan]['rata_rata_terlambat'] = $this->secondsToTime($rataDetik);
+            }
+        }
+        
+        return array_values($trend);
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Error getTrendKeterlambatan: ' . $e->getMessage());
+        return $this->getEmptyTrendData();
+    }
+}
+
+private function getTopKeterlambatan($tahun)
+{
+    try {
+        $db = \Config\Database::connect();
+        
+        $query = $db->query("
+            SELECT 
+                pegawai_nama,
+                bagian,
+                COUNT(*) as jumlah_terlambat,
+                SUM(TIMESTAMPDIFF(SECOND, 
+                    STR_TO_DATE(jam_masuk_shift, '%H:%i:%s'), 
+                    STR_TO_DATE(jam_masuk, '%H:%i:%s')
+                )) as total_detik_terlambat
+            FROM rekapabsensi 
+            WHERE YEAR(tgl) = ? 
+                AND jam_masuk > jam_masuk_shift
+                AND jam_masuk != ''
+                AND jam_masuk_shift != ''
+                AND (status_khusus = '' OR status_khusus IS NULL)
+            GROUP BY pegawai_pin, pegawai_nama, bagian
+            HAVING jumlah_terlambat > 0
+            ORDER BY total_detik_terlambat DESC
+            LIMIT 10
+        ", [$tahun]);
+        
+        $result = $query->getResultArray();
+        
+        foreach ($result as &$row) {
+            $row['total_terlambat_formatted'] = $this->secondsToTime($row['total_detik_terlambat']);
+            if ($row['jumlah_terlambat'] > 0) {
+                $row['rata_terlambat_formatted'] = $this->secondsToTime($row['total_detik_terlambat'] / $row['jumlah_terlambat']);
+            } else {
+                $row['rata_terlambat_formatted'] = '00:00:00';
+            }
+        }
+        
+        return $result;
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Error getTopKeterlambatan: ' . $e->getMessage());
+        return [];
+    }
+}
+
+private function getTrendLembur($tahun)
+{
+    try {
+        $db = \Config\Database::connect();
+        
+        $query = $db->query("
+            SELECT 
+                MONTH(tgl) as bulan,
+                COUNT(DISTINCT pegawai_pin) as jumlah_pegawai,
+                SUM(TIMESTAMPDIFF(SECOND, 
+                    STR_TO_DATE(lembur_masuk, '%H:%i:%s'), 
+                    STR_TO_DATE(lembur_pulang, '%H:%i:%s')
+                )) as total_detik_lembur
+            FROM rekapabsensi 
+            WHERE YEAR(tgl) = ?
+                AND lembur_masuk IS NOT NULL 
+                AND lembur_masuk != ''
+                AND lembur_pulang IS NOT NULL
+                AND lembur_pulang != ''
+                AND alasan_lembur IS NOT NULL
+                AND alasan_lembur != ''
+            GROUP BY MONTH(tgl)
+            ORDER BY bulan
+        ", [$tahun]);
+        
+        $result = $query->getResultArray();
+        $trend = [];
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $trend[$i] = [
+                'bulan' => $i,
+                'nama_bulan' => $this->getNamaBulan($i),
+                'jumlah_pegawai' => 0,
+                'total_detik_lembur' => 0,
+                'total_jam_lembur' => 0
+            ];
+        }
+        
+        foreach ($result as $row) {
+            $bulan = (int)$row['bulan'];
+            $trend[$bulan]['jumlah_pegawai'] = (int)$row['jumlah_pegawai'];
+            $trend[$bulan]['total_detik_lembur'] = (int)$row['total_detik_lembur'];
+            $trend[$bulan]['total_jam_lembur'] = round($row['total_detik_lembur'] / 3600, 2);
+        }
+        
+        return array_values($trend);
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Error getTrendLembur: ' . $e->getMessage());
+        return $this->getEmptyTrendData();
+    }
+}
+
+private function getTopLembur($tahun)
+{
+    try {
+        $db = \Config\Database::connect();
+        
+        $query = $db->query("
+            SELECT 
+                pegawai_nama,
+                bagian,
+                COUNT(*) as jumlah_lembur,
+                SUM(TIMESTAMPDIFF(SECOND, 
+                    STR_TO_DATE(lembur_masuk, '%H:%i:%s'), 
+                    STR_TO_DATE(lembur_pulang, '%H:%i:%s')
+                )) as total_detik_lembur
+            FROM rekapabsensi 
+            WHERE YEAR(tgl) = ?
+                AND lembur_masuk IS NOT NULL 
+                AND lembur_masuk != ''
+                AND lembur_pulang IS NOT NULL
+                AND lembur_pulang != ''
+                AND alasan_lembur IS NOT NULL
+                AND alasan_lembur != ''
+            GROUP BY pegawai_pin, pegawai_nama, bagian
+            HAVING jumlah_lembur > 0
+            ORDER BY total_detik_lembur DESC
+            LIMIT 10
+        ", [$tahun]);
+        
+        $result = $query->getResultArray();
+        
+        foreach ($result as &$row) {
+            $row['total_lembur_formatted'] = $this->secondsToTime($row['total_detik_lembur']);
+            $row['total_jam_lembur'] = round($row['total_detik_lembur'] / 3600, 2);
+            if ($row['jumlah_lembur'] > 0) {
+                $row['rata_lembur_formatted'] = $this->secondsToTime($row['total_detik_lembur'] / $row['jumlah_lembur']);
+            } else {
+                $row['rata_lembur_formatted'] = '00:00:00';
+            }
+        }
+        
+        return $result;
+        
+    } catch (\Exception $e) {
+        log_message('error', 'Error getTopLembur: ' . $e->getMessage());
+        return [];
+    }
+}
+private function getNamaBulan($bulan)
+{
+    $bulanNames = [
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+    ];
+    return $bulanNames[$bulan] ?? 'Unknown';
+}
 
 
 }

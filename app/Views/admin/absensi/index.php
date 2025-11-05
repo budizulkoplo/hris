@@ -7,15 +7,33 @@
 }
 </style>
 
-<form action="<?= base_url('admin/absensi') ?>" method="get" class="mb-4">
-    <div class="col-md-4">
-        <div class="input-group">
-            <label for="bulanTahun" class="input-group-text">Pilih Bulan:</label>
-            <input type="month" class="form-control w-auto" name="bulanTahun" id="bulanTahun" value="<?= esc($bulanTahun); ?>">
-            <button type="submit" class="btn btn-primary">Tampilkan</button>
+<div class="container-fluid mb-4">
+
+    <div class="row g-2 align-items-end">
+        <!-- Filter Periode -->
+        <div class="col-md-4">
+            <form action="<?= base_url('admin/absensi') ?>" method="get" class="d-flex">
+                <div class="input-group">
+                    <label for="bulanTahun" class="input-group-text">Bulan</label>
+                    <input type="month" class="form-control" name="bulanTahun" id="bulanTahun" value="<?= esc($bulanTahun); ?>">
+                    <button type="submit" class="btn btn-primary">Tampil</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Excel -->
+        <div class="col-md-4">
+            <form action="<?= base_url('admin/absensi/importExcel') ?>" method="post" enctype="multipart/form-data" class="d-flex">
+                <div class="input-group">
+                    <input type="file" name="file_excel" class="form-control" required>
+                    <button type="submit" class="btn btn-success">Import</button>
+                </div>
+            </form>
         </div>
     </div>
-</form>
+
+</div>
+
 
 <?php if (empty($dataAbsensi)): ?>
     <p>Data tidak tersedia.</p>
@@ -58,7 +76,6 @@
 
 <p class="mt-3">Keterangan:<br>
 <span style='color:red;font-weight:bold'>Jam Merah</span>: Terlambat</p>
-<span style='color:red;font-weight:bold'>Jadwal kedip merah</span>: Belum di input Jadwal</p>
 
 <!-- DataTables CSS & JS -->
 <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"> -->

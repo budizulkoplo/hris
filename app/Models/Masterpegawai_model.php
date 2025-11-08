@@ -9,8 +9,18 @@ class Masterpegawai_model extends Model
     protected $table         = 'pegawai';
     protected $primaryKey    = 'pegawai_id';
     protected $allowedFields = [
-        'pegawai_nip', 'nik', 'pegawai_nama', 'jabatan', 'nohp', 'email', 'alamat', 'bagian'
+        'pegawai_nip',
+        'nik',
+        'pegawai_nama',
+        'jabatan',
+        'nohp',
+        'email',
+        'alamat',
+        'bagian',
+        'pegawai_pin',
+        'pegawai_id'
     ];
+
     protected $returnType    = 'array';
     protected $useTimestamps = false;
 

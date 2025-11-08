@@ -29,6 +29,15 @@
         </div>
     </div>
 
+    <!-- 🔹 Tambahan Field Bagian -->
+    <div class="form-group row">
+        <label class="col-3">Bagian</label>
+        <div class="col-9">
+            <input type="text" name="bagian" class="form-control" value="<?= esc($pegawai['bagian']) ?>" placeholder="Misal: Keuangan, Farmasi, Rekam Medis">
+        </div>
+    </div>
+    <!-- 🔹 Akhir Tambahan -->
+
     <div class="form-group row">
         <label class="col-3">No HP</label>
         <div class="col-9">
@@ -50,10 +59,14 @@
         </div>
     </div>
 
-    <div class="form-group row">
+    <div class="form-group row mt-3">
         <div class="col-9 offset-3">
-            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Update</button>
-            <a href="<?= base_url('admin/masterpegawai') ?>" class="btn btn-secondary">Kembali</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> Update
+            </button>
+            <a href="<?= base_url('admin/masterpegawai') ?>" class="btn btn-secondary">
+                Kembali
+            </a>
         </div>
     </div>
 </form>

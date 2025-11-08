@@ -29,6 +29,15 @@
         </div>
     </div>
 
+    <!-- 🔹 Tambahan Field Bagian -->
+    <div class="form-group row">
+        <label class="col-3">Bagian</label>
+        <div class="col-9">
+            <input type="text" name="bagian" class="form-control">
+        </div>
+    </div>
+    <!-- 🔹 Akhir Tambahan -->
+
     <div class="form-group row">
         <label class="col-3">No HP</label>
         <div class="col-9">
@@ -46,14 +55,18 @@
     <div class="form-group row">
         <label class="col-3">Alamat</label>
         <div class="col-9">
-            <textarea name="alamat" class="form-control"></textarea>
+            <textarea name="alamat" class="form-control" rows="2"></textarea>
         </div>
     </div>
 
-    <div class="form-group row">
+    <div class="form-group row mt-3">
         <div class="col-9 offset-3">
-            <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Simpan</button>
-            <a href="<?= base_url('admin/masterpegawai') ?>" class="btn btn-secondary">Kembali</a>
+            <button type="submit" class="btn btn-success">
+                <i class="fa fa-save"></i> Simpan
+            </button>
+            <a href="<?= base_url('admin/masterpegawai') ?>" class="btn btn-secondary">
+                Kembali
+            </a>
         </div>
     </div>
 </form>
